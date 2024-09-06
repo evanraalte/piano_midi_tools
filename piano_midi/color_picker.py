@@ -41,9 +41,9 @@ class ColorPicker:
             print(f"Clicked color HSV: {color}")
 
             hsv_range = HSVRange(
-                h=Range(min=max(0, color[0] - 10), max=min(179, color[0] + 10)),
-                s=Range(min=max(0, color[1] - 40), max=min(255, color[1] + 40)),
-                v=Range(min=max(0, color[2] - 40), max=min(255, color[2] + 40)),
+                h=Range(min=max(0, int(color[0]) - 10), max=min(179, int(color[0]) + 10)),
+                s=Range(min=max(0, int(color[1]) - 40), max=min(255, int(color[1]) + 40)),
+                v=Range(min=max(0, int(color[2]) - 40), max=min(255, int(color[2]) + 40)),
             )
             self._set_trackbar_pos(hsv_range)
 
