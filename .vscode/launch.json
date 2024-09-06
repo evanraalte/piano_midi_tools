@@ -8,9 +8,10 @@
             "name": "Color picker",
             "type": "debugpy",
             "request": "launch",
-            "program": "app_color_picker.py",
+            "program": "main.py",
             "console": "integratedTerminal",
             "args": [
+                "color-picker",
                 "--video-path",
                 "test.mp4",
                 "--colors-path",
@@ -24,9 +25,10 @@
             "name": "Key picker",
             "type": "debugpy",
             "request": "launch",
-            "program": "app_key_picker.py",
+            "program": "main.py",
             "console": "integratedTerminal",
             "args": [
+                "key-picker",
                 "--video-path",
                 "test.mp4",
                 "--key-segments-path",
