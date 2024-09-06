@@ -101,11 +101,11 @@ def video_to_midi(
     video_capture = VideoCapture(video_path)
     key_segments = KeySegments.from_yaml(key_segments_path)
     key_colors = KeyColors.from_yaml(colors_path)
-    midi_writer = KeySequenceWriter(midi_file_path=midi_path)
+    key_sequence_writer = KeySequenceWriter(midi_file_path=midi_path)
     key_press_detector = KeyPressDetector(
         video_capture=video_capture, key_segments=key_segments, key_colors=key_colors
     )
-    key_press_detector.run(midi_writer=midi_writer)
+    key_press_detector.run(key_sequence_writer=key_sequence_writer)
 
 
 if __name__ == "__main__":

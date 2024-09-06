@@ -14,5 +14,5 @@ class KeyPressDetector:
         self.key_segments = key_segments
         self.key_colors = key_colors
 
-    def run(self, midi_writer: KeySequenceWriter) -> None:
+    def run(self, key_sequence_writer: KeySequenceWriter) -> None:
         pass
