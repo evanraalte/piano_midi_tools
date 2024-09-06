@@ -8,6 +8,7 @@ from pydantic import NonNegativeInt, PositiveInt
 
 app = typer.Typer()
 
+
 class Converter:
     def __init__(self, video_path: Path) -> None:
         if not video_path.exists():
@@ -15,15 +16,20 @@ class Converter:
             raise FileNotFoundError(msg)
         self.video_path = video_path
 
-    def generate_timeslice(self, frame_start: NonNegativeInt | None, frame_end: PositiveInt | None, scan_line_pct: NonNegativeInt) -> None:
+    def generate_timeslice(
+        self,
+        frame_start: NonNegativeInt | None,
+        frame_end: PositiveInt | None,
+        scan_line_pct: NonNegativeInt,
+    ) -> None:
         typer.echo(f"Generating timeslice of: {self.video_path}")
         # Open the video file
         cap = cv2.VideoCapture(self.video_path)
         output_path = self.video_path.with_suffix(".png")
         # Get video properties
-        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))  # noqa: F841
         height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        fps = int(cap.get(cv2.CAP_PROP_FPS))
+        fps = int(cap.get(cv2.CAP_PROP_FPS))  # noqa: F841
         frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
         # Create an empty image to store the timeslice
@@ -56,7 +62,6 @@ class Converter:
         typer.echo(f"Timeslice image saved to {output_path}")
 
 
-
 @app.command()
 def start(
     *,
@@ -78,7 +83,10 @@ def start(
     converter = Converter(video_path)
     if debug:
         typer.echo("Debug mode is enabled")
-    converter.generate_timeslice(frame_start=frame_start, frame_end=frame_end, scan_line_pct=0)
+    converter.generate_timeslice(
+        frame_start=frame_start, frame_end=frame_end, scan_line_pct=0
+    )
+
 
 if __name__ == "__main__":
     app()

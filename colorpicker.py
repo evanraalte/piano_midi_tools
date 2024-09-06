@@ -2,26 +2,10 @@ from pathlib import Path
 from typing import Annotated
 
 import cv2
-import numpy as np
 import typer
 import yaml
-from pydantic import BaseModel
 
-
-class Range(BaseModel):
-    min: int
-    max: int
-
-
-class HSVRange(BaseModel):
-    h: Range
-    s: Range
-    v: Range
-
-    def lower(self) -> np.ndarray:
-        return np.array([self.h.min, self.s.min, self.v.min])
-    def upper(self) -> np.ndarray:
-        return np.array([self.h.max, self.s.max, self.v.max])
+from piano_midi.models import HSVRange, Range
 
 ESC_KEY = 27
 
@@ -34,6 +18,7 @@ ESC_KEY = 27
 #    0 is white/gray, 255 is the full color.
 # V: Value - brightness of the color (0-255).
 #    0 is black, 255 is the brightest.
+
 
 class ColorPicker:
     WIN_NAME_HSV_MASK_CREATOR = "HSV Mask Creator"
@@ -73,12 +58,24 @@ class ColorPicker:
             self._set_trackbar_pos(hsv_range)
 
     def create_trackbars(self) -> None:
-        cv2.createTrackbar("HMin", self.WIN_NAME_HSV_MASK_CREATOR, 0, 179, lambda _: None)
-        cv2.createTrackbar("HMax", self.WIN_NAME_HSV_MASK_CREATOR, 179, 179, lambda _: None)
-        cv2.createTrackbar("SMin", self.WIN_NAME_HSV_MASK_CREATOR, 0, 255, lambda _: None)
-        cv2.createTrackbar("SMax", self.WIN_NAME_HSV_MASK_CREATOR, 255, 255, lambda _: None)
-        cv2.createTrackbar("VMin", self.WIN_NAME_HSV_MASK_CREATOR, 0, 255, lambda _: None)
-        cv2.createTrackbar("VMax", self.WIN_NAME_HSV_MASK_CREATOR, 255, 255, lambda _: None)
+        cv2.createTrackbar(
+            "HMin", self.WIN_NAME_HSV_MASK_CREATOR, 0, 179, lambda _: None
+        )
+        cv2.createTrackbar(
+            "HMax", self.WIN_NAME_HSV_MASK_CREATOR, 179, 179, lambda _: None
+        )
+        cv2.createTrackbar(
+            "SMin", self.WIN_NAME_HSV_MASK_CREATOR, 0, 255, lambda _: None
+        )
+        cv2.createTrackbar(
+            "SMax", self.WIN_NAME_HSV_MASK_CREATOR, 255, 255, lambda _: None
+        )
+        cv2.createTrackbar(
+            "VMin", self.WIN_NAME_HSV_MASK_CREATOR, 0, 255, lambda _: None
+        )
+        cv2.createTrackbar(
+            "VMax", self.WIN_NAME_HSV_MASK_CREATOR, 255, 255, lambda _: None
+        )
 
     def create_windows(self) -> None:
         cv2.namedWindow(self.WIN_NAME_ORIGINAL_IMAGE)
@@ -103,7 +100,31 @@ class ColorPicker:
         colors[color_num] = hsv_range.model_dump()
         with self.colors_path.open("w") as file:
             yaml.dump(colors, file)
-        print(f"Color {color_num} stored in {self.colors_path}")
+        typer.echo(
+            f"Color {color_num}, HSVRange: {hsv_range} stored in {self.colors_path}"
+        )
+
+    def load_color(self, color_num: int) -> None:
+        try:
+            with self.colors_path.open("r") as file:
+                colors = yaml.safe_load(file)
+        except FileNotFoundError:
+            typer.echo(f"Colors file not found: {self.colors_path}")
+            return
+        try:
+            hsv_range = HSVRange.model_validate(colors[color_num])
+            self._set_trackbar_pos(hsv_range)
+            typer.echo(f"Color {color_num} loaded from {self.colors_path}")
+        except KeyError:
+            typer.echo(f"Color {color_num} not found in {self.colors_path}")
+
+    def reset(self) -> None:
+        # reset trackbars
+        self.create_trackbars()
+        # remove entries from colors file
+        with self.colors_path.open("w") as file:
+            yaml.dump({}, file)
+        typer.echo("Trackbars reset and colors file cleared")
 
     def loop(self) -> None:
         running = True
@@ -121,6 +142,14 @@ class ColorPicker:
             if key in (ord("1"), ord("2"), ord("3"), ord("4")):
                 color_num = int(chr(key))
                 self.save_color(color_num, hsv_range)
+            if key in (ord("q"), ord("w"), ord("e"), ord("r")):
+                # map q -> 1, w -> 2, e -> 3, r -> 4
+                values = {"q": 1, "w": 2, "e": 3, "r": 4}
+                color_num = values[chr(key)]
+                self.load_color(color_num)
+            if key == ord("z"):
+                self.reset()
+
         cv2.destroyAllWindows()
 
     def run(self) -> None:
@@ -128,7 +157,10 @@ class ColorPicker:
         self.create_trackbars()
         self.loop()
 
+
 app = typer.Typer()
+
+
 @app.command()
 def start(
     *,
@@ -144,5 +176,7 @@ def start(
     typer.echo(f"Starting color picker with image path: {image_path}")
     color_picker = ColorPicker(image_path=image_path, colors_path=colors_path)
     color_picker.run()
+
+
 if __name__ == "__main__":
     app()
