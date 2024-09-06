@@ -158,7 +158,11 @@ class ColorPicker:
         self.loop()
 
 
-app = typer.Typer()
+app = typer.Typer(
+    name="colorpicker",
+    help="Color picker tool to create HSV masks for OpenCV",
+    add_completion=True,
+)
 
 
 @app.command()
@@ -166,12 +170,13 @@ def start(
     *,
     image_path: Annotated[
         Path,
-        typer.Option("--image-path", help="Image path"),
+        typer.Option("--image-path", help="Image path that is used for creating the mask"),
     ],
     colors_path: Annotated[
         Path,
-        typer.Option("--colors-path", help="Colors path"),
+        typer.Option("--colors-path", help="Path to store the colors to"),
     ],
+
 ) -> None:
     typer.echo(f"Starting color picker with image path: {image_path}")
     color_picker = ColorPicker(image_path=image_path, colors_path=colors_path)

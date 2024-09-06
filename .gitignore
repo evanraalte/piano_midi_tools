@@ -3,3 +3,5 @@
 .ruff_cache
 .venv
 *.yaml
+__pycache__
+.DS_Store
