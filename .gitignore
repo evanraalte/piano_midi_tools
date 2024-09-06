@@ -1,0 +1,5 @@
+*.png
+*.mp4
+.ruff_cache
+.venv
+*.yaml
