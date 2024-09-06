@@ -1,0 +1,38 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Color picker",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "app_color_picker.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--video-path",
+                "test.mp4",
+                "--colors-path",
+                "colors.yaml",
+                "--frame-end",
+                "400"
+
+            ]
+        },
+        {
+            "name": "Key picker",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "app_key_picker.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--video-path",
+                "test.mp4",
+                "--key-segments-path",
+                "keys.yaml",
+
+            ]
+        },
+    ]
+}

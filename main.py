@@ -1,91 +1,75 @@
 from pathlib import Path
 from typing import Annotated
 
-import cv2
-import numpy as np
 import typer
-from pydantic import NonNegativeInt, PositiveInt
 
-app = typer.Typer()
+from piano_midi.color_picker import ColorPicker
+from piano_midi.key_picker import KeyPicker
+from piano_midi.time_slicer import TimeSlicer
+from piano_midi.video_capture import VideoCapture
 
-
-class Converter:
-    def __init__(self, video_path: Path) -> None:
-        if not video_path.exists():
-            msg = f"Video not found: {video_path}"
-            raise FileNotFoundError(msg)
-        self.video_path = video_path
-
-    def generate_timeslice(
-        self,
-        frame_start: NonNegativeInt | None,
-        frame_end: PositiveInt | None,
-        scan_line_pct: NonNegativeInt,
-    ) -> None:
-        typer.echo(f"Generating timeslice of: {self.video_path}")
-        # Open the video file
-        cap = cv2.VideoCapture(self.video_path)
-        output_path = self.video_path.with_suffix(".png")
-        # Get video properties
-        width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))  # noqa: F841
-        height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        fps = int(cap.get(cv2.CAP_PROP_FPS))  # noqa: F841
-        frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-
-        # Create an empty image to store the timeslice
-        timeslice = []
-        row_num = 0
-        for frame_number in range(frame_count):
-            if frame_start is not None and frame_number < frame_start:
-                continue
-            if frame_end is not None and frame_number > frame_end:
-                break
-            ret, frame = cap.read()
-            if not ret:
-                break
-            # Process the frame
-            typer.echo(f"Processing frame {frame_number}")
-            scan_line_px = int(height * scan_line_pct / 100)
-            scan_line = frame[scan_line_px, :, :]
-            timeslice.append(scan_line)
-            row_num += 1
-
-        # Convert the list of rows to a numpy array
-        timeslice = np.array(timeslice)
-        # print the 20 colors that are used most in the timeslice
-        colors, counts = np.unique(timeslice.reshape(-1, 3), axis=0, return_counts=True)
-        sorted_colors = colors[np.argsort(-counts)]
-        typer.echo(f"Most common colors in the timeslice: {sorted_colors[:20]}")
-        # Save the timeslice image
-        cv2.imwrite(output_path, timeslice)
-
-        typer.echo(f"Timeslice image saved to {output_path}")
+app = typer.Typer(
+    name="midi tools",
+    add_completion=False,
+)
 
 
 @app.command()
-def start(
+def key_picker(
     *,
     video_path: Annotated[
         Path,
-        typer.Option("--path", help="Video path"),
+        typer.Option(
+            "--video-path", help="Video path that is used for creating the mask"
+        ),
+    ],
+    key_segments_path: Annotated[
+        Path,
+        typer.Option("--key-segments-path", help="Path to store the keysegments to"),
+    ],
+) -> None:
+    typer.echo(f"Starting key picker with image path: {video_path}")
+    video_capture = VideoCapture(video_path)
+    with video_capture as cap:
+        frame = cap.get_frame(frame_number=0)
+    key_picker = KeyPicker(frame=frame, key_segments_path=key_segments_path)
+    key_picker.run()
+
+
+@app.command()
+def color_picker(
+    *,
+    video_path: Annotated[
+        Path,
+        typer.Option(
+            "--video-path", help="Video path that is used for creating the mask"
+        ),
+    ],
+    colors_path: Annotated[
+        Path,
+        typer.Option("--colors-path", help="Path to store the colors to"),
     ],
     frame_start: Annotated[
-        int | None,
-        typer.Option("--frame-start", help="Start frame number"),
-    ] = None,
+        int,
+        typer.Option("--frame-start", help="Frame start for the timeslice"),
+    ] = 0,
     frame_end: Annotated[
         int | None,
-        typer.Option("--frame-end", help="End frame number"),
+        typer.Option("--frame-end", help="Frame end for the timeslice"),
     ] = None,
-    debug: Annotated[bool, typer.Option("--debug", help="Enable debug mode")] = True,
+    scan_line_pct: Annotated[
+        int,
+        typer.Option("--scan-line-pct", help="Percentage of the scan line"),
+    ] = 0,
 ) -> None:
-    typer.echo(f"Starting conversion with video path: {video_path}")
-    converter = Converter(video_path)
-    if debug:
-        typer.echo("Debug mode is enabled")
-    converter.generate_timeslice(
-        frame_start=frame_start, frame_end=frame_end, scan_line_pct=0
+    typer.echo(f"Starting color picker with image path: {video_path}")
+    video_capture = VideoCapture(video_path)
+    time_slicer = TimeSlicer(video_capture)
+    time_slice = time_slicer.generate_timeslice(
+        frame_start=frame_start, frame_end=frame_end, scan_line_pct=scan_line_pct
     )
+    color_picker = ColorPicker(time_slice=time_slice, colors_path=colors_path)
+    color_picker.run()
 
 
 if __name__ == "__main__":

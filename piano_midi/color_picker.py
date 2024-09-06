@@ -1,23 +1,11 @@
 from pathlib import Path
-from typing import Annotated
 
 import cv2
+import numpy as np
 import typer
 import yaml
 
-from piano_midi.models import HSVRange, Range
-
-ESC_KEY = 27
-
-
-# Convert to HSV
-# HSV Format:
-# H: Hue - color type (such as red, blue, or yellow).
-#    In OpenCV it ranges from 0 to 179.
-# S: Saturation - vibrancy of the color (0-255).
-#    0 is white/gray, 255 is the full color.
-# V: Value - brightness of the color (0-255).
-#    0 is black, 255 is the brightest.
+from piano_midi.models import ESC_KEY, HSVRange, Range
 
 
 class ColorPicker:
@@ -82,13 +70,9 @@ class ColorPicker:
         cv2.namedWindow(self.WIN_NAME_HSV_MASK_CREATOR)
         cv2.setMouseCallback(self.WIN_NAME_ORIGINAL_IMAGE, self.click_event)
 
-    def __init__(self, image_path: Path, colors_path: Path) -> None:
-        self.image_path = image_path
+    def __init__(self, time_slice: np.ndarray, colors_path: Path) -> None:
+        self.image = time_slice
         self.colors_path = colors_path
-        self.image = cv2.imread(str(image_path))
-        if self.image is None:
-            msg = f"Could not read the image: {image_path}"
-            raise ValueError(msg)
         self.hsv = cv2.cvtColor(self.image, cv2.COLOR_BGR2HSV)
 
     def save_color(self, color_num: int, hsv_range: HSVRange) -> None:
@@ -143,7 +127,6 @@ class ColorPicker:
                 color_num = int(chr(key))
                 self.save_color(color_num, hsv_range)
             if key in (ord("q"), ord("w"), ord("e"), ord("r")):
-                # map q -> 1, w -> 2, e -> 3, r -> 4
                 values = {"q": 1, "w": 2, "e": 3, "r": 4}
                 color_num = values[chr(key)]
                 self.load_color(color_num)
@@ -156,32 +139,3 @@ class ColorPicker:
         self.create_windows()
         self.create_trackbars()
         self.loop()
-
-
-app = typer.Typer(
-    name="colorpicker",
-    help="Color picker tool to create HSV masks for OpenCV",
-    add_completion=True,
-)
-
-
-@app.command()
-def start(
-    *,
-    image_path: Annotated[
-        Path,
-        typer.Option("--image-path", help="Image path that is used for creating the mask"),
-    ],
-    colors_path: Annotated[
-        Path,
-        typer.Option("--colors-path", help="Path to store the colors to"),
-    ],
-
-) -> None:
-    typer.echo(f"Starting color picker with image path: {image_path}")
-    color_picker = ColorPicker(image_path=image_path, colors_path=colors_path)
-    color_picker.run()
-
-
-if __name__ == "__main__":
-    app()
