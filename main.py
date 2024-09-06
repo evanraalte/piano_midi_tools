@@ -6,7 +6,7 @@ import typer
 from piano_midi.color_picker import ColorPicker
 from piano_midi.key_picker import KeyPicker
 from piano_midi.key_press_detector import KeyPressDetector
-from piano_midi.midi_writer import KeySequenceWriter
+from piano_midi.key_sequence_writer import KeySequenceWriter
 from piano_midi.models import KeyColors, KeySegments
 from piano_midi.time_slicer import TimeSlicer
 from piano_midi.video_capture import VideoCapture
@@ -68,7 +68,7 @@ def color_picker(
     typer.echo(f"Starting color picker with image path: {video_path}")
     video_capture = VideoCapture(video_path)
     time_slicer = TimeSlicer(video_capture)
-    time_slice = time_slicer.generate_timeslice(
+    time_slice = time_slicer.generate(
         frame_start=frame_start, frame_end=frame_end, scan_line_pct=scan_line_pct
     )
     color_picker = ColorPicker(time_slice=time_slice, colors_path=colors_path)

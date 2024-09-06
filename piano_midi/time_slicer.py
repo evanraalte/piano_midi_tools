@@ -8,7 +8,7 @@ class TimeSlicer:
     def __init__(self, video_capture: VideoCapture) -> None:
         self.video_capture = video_capture
 
-    def generate_timeslice(
+    def generate(
         self, frame_start: int, frame_end: int | None, scan_line_pct: int
     ) -> np.ndarray:
         with self.video_capture as cap:

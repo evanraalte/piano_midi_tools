@@ -39,9 +39,7 @@ class HSVRange(BaseModel):
 ESC_KEY = 27
 
 
-class KeySegment(BaseModel):
-    start: int
-    end: int
+
 
 
 class BaseModelYaml(BaseModel):
@@ -73,6 +71,10 @@ class InvalidNumOfKeySegmentsError(Exception):
         super().__init__(msg)
 
 
+
+class KeySegment(BaseModel):
+    start: int # in pixels
+    end: int # in pixels
 class KeySegments(BaseModelYaml, validate_assignment=True):
     white: list[KeySegment] | None = None
     black: list[KeySegment] | None = None

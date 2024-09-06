@@ -81,11 +81,12 @@ class VideoCapture:
         self.cap.set(cv2.CAP_PROP_POS_FRAMES, frame_number)
 
     def read_range(
-        self, start: int, end: int
-    ) -> Generator[cv2.typing.MatLike, None, None]:
+        self, start: int = 0, end: int | None = None
+    ) -> Generator[tuple[cv2.typing.MatLike, int], None, None]:
         if not self.cap:
             msg = "VideoCapture is not initialized. Use with 'with' statement or call _initialize_capture() first."
             raise RuntimeError(msg)
+        end = end or self._properties["frame_count"] - 1
         if start < 0 or end >= self._properties["frame_count"]:
             msg = f"Invalid frame range. Must be between 0 and {self._properties['frame_count'] - 1}"
             raise ValueError(msg)
@@ -96,7 +97,7 @@ class VideoCapture:
             if not ret:
                 msg = f"Unable to read frame {frame_number}"
                 raise OSError(msg)
-            yield frame
+            yield (frame, frame_number)
 
     def read(self) -> tuple[bool, cv2.typing.MatLike]:
         if not self.cap:
