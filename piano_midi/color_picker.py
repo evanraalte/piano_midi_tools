@@ -5,14 +5,16 @@ import numpy as np
 import typer
 import yaml
 
-from piano_midi.models import ESC_KEY, HSVRange, Range
+from piano_midi.models import ESC_KEY, HSVRange, KeyColor, KeyColors, Range
 
 
 class ColorPicker:
     WIN_NAME_HSV_MASK_CREATOR = "HSV Mask Creator"
     WIN_NAME_ORIGINAL_IMAGE = "Original Image"
 
-    def _set_trackbar_pos(self, hsv_range: HSVRange) -> None:
+    def _set_trackbar_pos(self, hsv_range: HSVRange | None) -> None:
+        if hsv_range is None:
+            return
         cv2.setTrackbarPos("HMin", self.WIN_NAME_HSV_MASK_CREATOR, hsv_range.h.min)
         cv2.setTrackbarPos("SMin", self.WIN_NAME_HSV_MASK_CREATOR, hsv_range.s.min)
         cv2.setTrackbarPos("VMin", self.WIN_NAME_HSV_MASK_CREATOR, hsv_range.v.min)
@@ -75,32 +77,21 @@ class ColorPicker:
         self.colors_path = colors_path
         self.hsv = cv2.cvtColor(self.image, cv2.COLOR_BGR2HSV)
 
-    def save_color(self, color_num: int, hsv_range: HSVRange) -> None:
-        try:
-            with self.colors_path.open("r") as file:
-                colors = yaml.safe_load(file)
-        except FileNotFoundError:
-            colors = {}
-        colors[color_num] = hsv_range.model_dump()
-        with self.colors_path.open("w") as file:
-            yaml.dump(colors, file)
-        typer.echo(
-            f"Color {color_num}, HSVRange: {hsv_range} stored in {self.colors_path}"
-        )
+    def save_color(self, key_color: KeyColor, hsv_range: HSVRange) -> None:
+        key_colors = KeyColors.from_yaml(self.colors_path)
+        color_num = key_color.name.lower()
+        setattr(key_colors, color_num, hsv_range)
+        typer.echo(f"{key_color} with {hsv_range} stored in {self.colors_path}")
+        key_colors.to_yaml(self.colors_path)
 
-    def load_color(self, color_num: int) -> None:
-        try:
-            with self.colors_path.open("r") as file:
-                colors = yaml.safe_load(file)
-        except FileNotFoundError:
-            typer.echo(f"Colors file not found: {self.colors_path}")
-            return
-        try:
-            hsv_range = HSVRange.model_validate(colors[color_num])
+    def load_color(self, key_color: KeyColor) -> None:
+        key_colors = KeyColors.from_yaml(self.colors_path)
+        if key_color.name.lower() in key_colors.model_dump():
+            hsv_range = getattr(key_colors, key_color.name.lower())
             self._set_trackbar_pos(hsv_range)
-            typer.echo(f"Color {color_num} loaded from {self.colors_path}")
-        except KeyError:
-            typer.echo(f"Color {color_num} not found in {self.colors_path}")
+            typer.echo(f"{key_color} loaded from {self.colors_path}")
+        else:
+            typer.echo(f"{key_color} not found in {self.colors_path}")
 
     def reset(self) -> None:
         # reset trackbars
@@ -124,12 +115,21 @@ class ColorPicker:
             if key == ESC_KEY:
                 running = False
             if key in (ord("1"), ord("2"), ord("3"), ord("4")):
-                color_num = int(chr(key))
-                self.save_color(color_num, hsv_range)
+                values = {
+                    "1": KeyColor.LEFT_WHITE,
+                    "2": KeyColor.LEFT_BLACK,
+                    "3": KeyColor.RIGHT_WHITE,
+                    "4": KeyColor.RIGHT_BLACK,
+                }
+                self.save_color(key_color=values[chr(key)], hsv_range=hsv_range)
             if key in (ord("q"), ord("w"), ord("e"), ord("r")):
-                values = {"q": 1, "w": 2, "e": 3, "r": 4}
-                color_num = values[chr(key)]
-                self.load_color(color_num)
+                values = {
+                    "q": KeyColor.LEFT_WHITE,
+                    "w": KeyColor.LEFT_BLACK,
+                    "e": KeyColor.RIGHT_WHITE,
+                    "r": KeyColor.RIGHT_BLACK,
+                }
+                self.load_color(key_color=values[chr(key)])
             if key == ord("z"):
                 self.reset()
 

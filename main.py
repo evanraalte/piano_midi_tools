@@ -5,6 +5,9 @@ import typer
 
 from piano_midi.color_picker import ColorPicker
 from piano_midi.key_picker import KeyPicker
+from piano_midi.key_press_detector import KeyPressDetector
+from piano_midi.midi_writer import KeySequenceWriter
+from piano_midi.models import KeyColors, KeySegments
 from piano_midi.time_slicer import TimeSlicer
 from piano_midi.video_capture import VideoCapture
 
@@ -70,6 +73,39 @@ def color_picker(
     )
     color_picker = ColorPicker(time_slice=time_slice, colors_path=colors_path)
     color_picker.run()
+
+
+@app.command()
+def video_to_midi(
+    *,
+    video_path: Annotated[
+        Path,
+        typer.Option(
+            "--video-path", help="Video path that is used for creating the mask"
+        ),
+    ],
+    key_segments_path: Annotated[
+        Path,
+        typer.Option("--key-segments-path", help="Path to store the keysegments to"),
+    ],
+    colors_path: Annotated[
+        Path,
+        typer.Option("--colors-path", help="Path to store the colors to"),
+    ],
+    midi_path: Annotated[
+        Path,
+        typer.Option("--midi-path", help="Path to store the midi file to"),
+    ],
+) -> None:
+    typer.echo(f"Starting video to midi with image path: {video_path}")
+    video_capture = VideoCapture(video_path)
+    key_segments = KeySegments.from_yaml(key_segments_path)
+    key_colors = KeyColors.from_yaml(colors_path)
+    midi_writer = KeySequenceWriter(midi_file_path=midi_path)
+    key_press_detector = KeyPressDetector(
+        video_capture=video_capture, key_segments=key_segments, key_colors=key_colors
+    )
+    key_press_detector.run(midi_writer=midi_writer)
 
 
 if __name__ == "__main__":

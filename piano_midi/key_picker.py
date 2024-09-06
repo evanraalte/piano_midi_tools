@@ -3,10 +3,17 @@ from pathlib import Path
 import cv2
 import numpy as np
 import typer
-import yaml
 from numpy import ndarray
 
-from piano_midi.models import ESC_KEY, HSVRange, PianoKey, Range
+from piano_midi.models import (
+    ESC_KEY,
+    HSVRange,
+    InvalidNumOfKeySegmentsError,
+    KeySegment,
+    KeySegments,
+    PianoKey,
+    Range,
+)
 
 
 class KeyPicker:
@@ -85,33 +92,22 @@ class KeyPicker:
         typer.echo("Trackbars reset")
 
     def _store_segments(
-        self, segments: list[dict[str, int]], piano_key: PianoKey
+        self, key_segments: list[KeySegment], piano_key: PianoKey
     ) -> None:
         """Stores the segments in a yaml file"""
         try:
-            with self.key_segments_path.open("r") as f:
-                data = yaml.safe_load(f)
-                # if data is not a dict[str, list[tuple[int,int]]], reset it with a warning
-                if not isinstance(data, dict):
-                    typer.echo("Data is not a dict, resetting")
-                    data = {}
-        except FileNotFoundError:
-            data = {}
+            _key_segments = KeySegments.from_yaml(self.key_segments_path)
+        except Exception:
+            typer.echo("Could not load key segments, creating new one")
+            _key_segments = KeySegments()
+        try:
+            setattr(_key_segments, piano_key.name.lower(), key_segments)
+            _key_segments.to_yaml(self.key_segments_path)
+            typer.echo(f"Segments stored for color {piano_key}")
+        except InvalidNumOfKeySegmentsError as e:
+            typer.echo(e, err=True)
 
-        # convert tuples to dicts:
-        data[piano_key.name] = segments
-
-        # check if the number of segments is correct
-        if len(segments) != piano_key.value:
-            typer.echo(f"Expected {piano_key.value} segments, got {len(segments)}")
-            return
-
-        with self.key_segments_path.open("w") as f:
-            yaml.dump(data, f)
-
-        typer.echo(f"Segments stored for color {piano_key}")
-
-    def _get_segments(self, masked_scanline: ndarray) -> list[dict[str, int]]:
+    def _get_key_segments(self, masked_scanline: ndarray) -> list[KeySegment]:
         # first map every non zero value to white
         masked_scanline = (masked_scanline != 0) * 255
         white = np.array([255, 255, 255])
@@ -132,8 +128,10 @@ class KeyPicker:
         segments = [
             segment for segment in segments if segment[1] - segment[0] > noise_floor
         ]
-        segments_dict = [{"start": start, "end": end} for start, end in segments]
-        return segments_dict
+        key_segments = [
+            KeySegment(start=segment[0], end=segment[1]) for segment in segments
+        ]
+        return key_segments
 
     def _loop(self) -> None:
         running = True
@@ -158,12 +156,12 @@ class KeyPicker:
 
             # save a copy of result, with intersection of scanline (ie 1d array)
             line = masked_image[height_px, :, :]
-            segments = self._get_segments(masked_scanline=line)
+            key_segments = self._get_key_segments(masked_scanline=line)
 
             # draw number of segments somewhere on the image
             cv2.putText(
                 masked_image_with_overlay,
-                f"Num of segments: {len(segments)}",
+                f"Num of segments: {len(key_segments)}",
                 (10, 30),
                 cv2.FONT_HERSHEY_SIMPLEX,
                 1,
@@ -173,17 +171,17 @@ class KeyPicker:
 
             # draw segments on result_with_line in red:
             # specifically, draw thick dots on the start and end of each segment
-            for segment in segments:
+            for segment in key_segments:
                 cv2.circle(
                     masked_image_with_overlay,
-                    (segment["start"], height_px),
+                    (segment.start, height_px),
                     5,
                     (0, 0, 255),
                     -1,
                 )
                 cv2.circle(
                     masked_image_with_overlay,
-                    (segment["end"], height_px),
+                    (segment.end, height_px),
                     5,
                     (255, 0, 0),
                     -1,
@@ -196,9 +194,9 @@ class KeyPicker:
             if key == ESC_KEY:
                 running = False
             if key == ord("w"):
-                self._store_segments(segments, PianoKey.WHITE)
+                self._store_segments(key_segments, PianoKey.WHITE)
             if key == ord("b"):
-                self._store_segments(segments, PianoKey.BLACK)
+                self._store_segments(key_segments, PianoKey.BLACK)
             if key == ord("z"):
                 self._reset()
 

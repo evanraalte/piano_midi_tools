@@ -1,7 +1,11 @@
 from enum import Enum
+from pathlib import Path
+from typing import Self
 
 import numpy as np
-from pydantic import BaseModel
+import pydantic
+import yaml
+from pydantic import BaseModel, ValidationError
 
 
 class Range(BaseModel):
@@ -35,7 +39,72 @@ class HSVRange(BaseModel):
 ESC_KEY = 27
 
 
+class KeySegment(BaseModel):
+    start: int
+    end: int
+
+
+class BaseModelYaml(BaseModel):
+    @classmethod
+    def from_yaml(cls, yaml_path: Path) -> Self:
+        with yaml_path.open("r") as file:
+            data = yaml.safe_load(file)
+        try:
+            return cls.model_validate(data)
+        except ValidationError:
+            return cls()
+
+    def to_yaml(self, yaml_path: Path) -> None:
+        with yaml_path.open("w") as file:
+            file.write(yaml.dump(self.model_dump(mode="json")))
+
+
 class PianoKey(Enum):
     # store number of expected keys
     WHITE = 52
     BLACK = 36
+
+
+class InvalidNumOfKeySegmentsError(Exception):
+    def __init__(self, expected_num_keys: int, actual_num_keys: int, key_name: str) -> None:
+        self.expected_keys = expected_num_keys
+        self.actual_keys = actual_num_keys
+        msg = f"Did not detect {expected_num_keys} {key_name} keys, instead got {actual_num_keys}"
+        super().__init__(msg)
+
+
+class KeySegments(BaseModelYaml, validate_assignment=True):
+    white: list[KeySegment] | None = None
+    black: list[KeySegment] | None = None
+
+    @pydantic.model_validator(mode="after")
+    def validate_num_keys(self) -> Self:
+        expected_white_keys = 52
+        if self.white and len(self.white) != expected_white_keys:
+            raise InvalidNumOfKeySegmentsError(
+                expected_num_keys=expected_white_keys,
+                actual_num_keys=len(self.white),
+                key_name="white",
+            )
+        expected_black_keys = 36
+        if self.black and len(self.black) != expected_black_keys:
+            raise InvalidNumOfKeySegmentsError(
+                expected_num_keys=expected_black_keys,
+                actual_num_keys=len(self.black),
+                key_name="black",
+            )
+        return self
+
+
+class KeyColor(Enum):
+    LEFT_WHITE = 0
+    RIGHT_WHITE = 1
+    LEFT_BLACK = 2
+    RIGHT_BLACK = 3
+
+
+class KeyColors(BaseModelYaml):
+    left_white: HSVRange | None = None
+    right_white: HSVRange | None = None
+    left_black: HSVRange | None = None
+    right_black: HSVRange | None = None
