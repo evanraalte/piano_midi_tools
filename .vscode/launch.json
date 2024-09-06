@@ -36,5 +36,24 @@
 
             ]
         },
+        {
+            "name": "Video to midi",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "main.py",
+            "console": "integratedTerminal",
+            "args": [
+                "video-to-midi",
+                "--video-path",
+                "test.mp4",
+                "--key-segments-path",
+                "keys.yaml",
+                "--colors-path",
+                "colors.yaml",
+                "--midi-path",
+                "output.midi"
+
+            ]
+        },
     ]
 }
