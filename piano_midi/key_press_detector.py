@@ -29,7 +29,7 @@ class KeyPressDetector:
 
     def run(self, *, key_sequence_writer: KeySequenceWriter) -> None:
         with self.video_capture as cap:
-            for frame, frame_num in cap.read_range(0, 400):
+            for frame, frame_num in cap.read_range():
                 # read line  of frame
                 line = frame[self.scan_line_px : self.scan_line_px + 1, :, :]
                 line_hsv = cv2.cvtColor(line, cv2.COLOR_BGR2HSV)
@@ -86,5 +86,5 @@ class KeyPressDetector:
                 changes = next_piano_state.detect_changes(self.piano_state)
                 if changes.pressed or changes.released:
                     key_sequence_writer.process_change(changes)
-                    print(f"frame: {frame_num}: {changes=}")
+                    print(f"during frame {frame_num}")
                 self.piano_state = next_piano_state

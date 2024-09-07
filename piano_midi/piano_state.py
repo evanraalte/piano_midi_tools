@@ -9,8 +9,8 @@ from piano_midi.models import BlackKeyIndex, Hand, KeyIndex, WhiteKeyIndex
 
 
 class PianoChanges(BaseModel):
-    pressed: list[PianoPress]
-    released: list[PianoPress]
+    pressed: set[PianoPress]
+    released: set[PianoPress]
 
 
 class PianoPress(BaseModel):
@@ -62,4 +62,4 @@ class PianoState:
         pressed = self.state - old_state.state
         # find what is present in old state but not in current state
         released = old_state.state - self.state
-        return PianoChanges(pressed=list(pressed), released=list(released))
+        return PianoChanges(pressed=pressed, released=released)
