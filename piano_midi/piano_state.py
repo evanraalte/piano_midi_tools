@@ -34,14 +34,14 @@ class PianoKeyState:
     def is_key_pressed(self, key_index: KeyIndex) -> bool:
         return bool(self.state & (1 << key_index.value))
 
-    def detect_changes(self, other_state: PianoKeyState) -> tuple[list[int], list[int]]:
-        diff = self.state ^ other_state.state
-        pressed = [
+    def detect_changes(self, old_state: PianoKeyState) -> tuple[list[int], list[int]]:
+        diff = self.state ^ old_state.state
+        released = [
             i
             for i in range(self.TOTAL_KEYS)
-            if diff & (1 << i) and other_state.state & (1 << i)
+            if diff & (1 << i) and old_state.state & (1 << i)
         ]
-        released = [
+        pressed = [
             i
             for i in range(self.TOTAL_KEYS)
             if diff & (1 << i) and self.state & (1 << i)
@@ -90,13 +90,13 @@ class PianoState:
         self.hand_state.set_hand(key_index, hand, is_pressed=is_pressed)
 
     def set_white_key(
-        self, white_key_idx: int, *, is_pressed: bool, hand: Hand | None = None
+        self, white_key_idx: int, *, is_pressed: bool, hand: Hand
     ) -> None:
         key_index = WhiteKeyIndex(value=white_key_idx).to_key_index()
         self._set_key(key_index, is_pressed=is_pressed, hand=hand)
 
     def set_black_key(
-        self, black_key_idx: int, *, is_pressed: bool, hand: Hand | None = None
+        self, black_key_idx: int, *, is_pressed: bool, hand: Hand
     ) -> None:
         key_index = BlackKeyIndex(value=black_key_idx).to_key_index()
         self._set_key(key_index, is_pressed=is_pressed, hand=hand)

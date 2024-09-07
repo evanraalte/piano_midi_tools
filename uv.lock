@@ -19,6 +19,15 @@ wheels = [
 ]
 
 [[package]]
+name = "attrs"
+version = "24.2.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/fc/0f/aafca9af9315aee06a89ffde799a10a582fe8de76c563ee80bbcdc08b3fb/attrs-24.2.0.tar.gz", hash = "sha256:5cfb1b9148b5b086569baec03f20d7b6bf3bcacc9a42bebf87ffaaca362f6346", size = 792678 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/6a/21/5b6702a7f963e95456c0de2d495f67bf5fd62840ac655dc451586d23d39a/attrs-24.2.0-py3-none-any.whl", hash = "sha256:81921eb96de3191c8258c199618104dd27ac608d9366f5e35d011eae1867ede2", size = 63001 },
+]
+
+[[package]]
 name = "click"
 version = "8.1.7"
 source = { registry = "https://pypi.org/simple" }
@@ -102,6 +111,19 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/04/40/44d6a94e52e91fe104f9ca95944466af34828992cbc66b666f541de137f1/fonttools-4.53.1-cp312-cp312-win32.whl", hash = "sha256:791b31ebbc05197d7aa096bbc7bd76d591f05905d2fd908bf103af4488e60670", size = 2147572 },
     { url = "https://files.pythonhosted.org/packages/6d/9a/b695930e1b4e6929cc60e294489421632a05c105ac8c56ee63ef56a47872/fonttools-4.53.1-cp312-cp312-win_amd64.whl", hash = "sha256:6ed170b5e17da0264b9f6fae86073be3db15fa1bd74061c8331022bca6d09bab", size = 2193313 },
     { url = "https://files.pythonhosted.org/packages/e4/b9/0394d67056d4ad36a3807b439571934b318f1df925593a95e9ec0516b1a7/fonttools-4.53.1-py3-none-any.whl", hash = "sha256:f1f8758a2ad110bd6432203a344269f445a2907dc24ef6bccfd0ac4e14e0d71d", size = 1090472 },
+]
+
+[[package]]
+name = "hypothesis"
+version = "6.112.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "attrs" },
+    { name = "sortedcontainers" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/63/d6/8cc282c41704c3e21058e8eb8cc5512ec23c66d02c8a7490aedea715d8d2/hypothesis-6.112.0.tar.gz", hash = "sha256:06ea8857e1e711a1a6f24154a3c8c4eab04b041993206aaa267f98b859fd6ef5", size = 406683 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d1/e0/0c92216c73dc12c31a8f9ceae3353bf08cdd8f7c679f8a6413849aed1f02/hypothesis-6.112.0-py3-none-any.whl", hash = "sha256:1e6adbd9534c0d691690b5006904327ea37c851d4e15262a22094aa77879e84d", size = 467482 },
 ]
 
 [[package]]
@@ -345,6 +367,7 @@ name = "piano-midi"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "hypothesis" },
     { name = "matplotlib" },
     { name = "mido" },
     { name = "mypy" },
@@ -366,6 +389,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "hypothesis", specifier = ">=6.112.0" },
     { name = "matplotlib", specifier = ">=3.9.2" },
     { name = "mido", specifier = ">=1.3.2" },
     { name = "mypy", specifier = ">=1.11.2" },
@@ -611,6 +635,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/71/39/171f1c67cd00715f190ba0b100d606d440a28c93c7714febeca8b79af85e/six-1.16.0.tar.gz", hash = "sha256:1e61c37477a1626458e36f7b1d82aa5c9b094fa4802892072e49de9c60c4c926", size = 34041 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/d9/5a/e7c31adbe875f2abbb91bd84cf2dc52d792b5a01506781dbcf25c91daf11/six-1.16.0-py2.py3-none-any.whl", hash = "sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254", size = 11053 },
+]
+
+[[package]]
+name = "sortedcontainers"
+version = "2.4.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/e8/c4/ba2f8066cceb6f23394729afe52f3bf7adec04bf9ed2c820b39e19299111/sortedcontainers-2.4.0.tar.gz", hash = "sha256:25caa5a06cc30b6b83d11423433f65d1f9d76c4c6a0c90e3379eaa43b9bfdb88", size = 30594 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/32/46/9cb0e58b2deb7f82b84065f37f3bffeb12413f947f9388e4cac22c4621ce/sortedcontainers-2.4.0-py2.py3-none-any.whl", hash = "sha256:a163dcaede0f1c021485e957a39245190e74249897e2ae4b2aa38595db237ee0", size = 29575 },
 ]
 
 [[package]]

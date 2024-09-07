@@ -73,10 +73,14 @@ class WhiteKeyIndex(BaseModel):
     value: Annotated[int, Field(strict=True, ge=0, lt=52)]
 
     def to_key_index(self) -> KeyIndex:
-        # map the 0-51 range to the 0-87 range
+        special_case = 51
         octave = self.value // 7
         key_in_octave = self.value % 7
         offsets = [0, 2, 4, 5, 7, 9, 11]
+
+        if self.value == special_case:  # Special case for the highest white key
+            return KeyIndex(value=87)
+
         index = octave * 12 + offsets[key_in_octave]
         return KeyIndex(value=index)
 
