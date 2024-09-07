@@ -1,11 +1,11 @@
 from enum import Enum
 from pathlib import Path
-from typing import Self
+from typing import Annotated, Self
 
 import numpy as np
 import pydantic
 import yaml
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, Field, ValidationError
 
 
 class Range(BaseModel):
@@ -39,9 +39,6 @@ class HSVRange(BaseModel):
 ESC_KEY = 27
 
 
-
-
-
 class BaseModelYaml(BaseModel):
     @classmethod
     def from_yaml(cls, yaml_path: Path) -> Self:
@@ -63,18 +60,54 @@ class PianoKey(Enum):
     BLACK = 36
 
 
+class Hand(Enum):
+    LEFT = 0
+    RIGHT = 1
+
+
+class KeyIndex(BaseModel):
+    value: Annotated[int, Field(strict=True, ge=0, lt=88)]
+
+
+class WhiteKeyIndex(BaseModel):
+    value: Annotated[int, Field(strict=True, ge=0, lt=52)]
+
+    def to_key_index(self) -> KeyIndex:
+        # map the 0-51 range to the 0-87 range
+        octave = self.value // 7
+        key_in_octave = self.value % 7
+        offsets = [0, 2, 4, 5, 7, 9, 11]
+        index = octave * 12 + offsets[key_in_octave]
+        return KeyIndex(value=index)
+
+
+class BlackKeyIndex(BaseModel):
+    value: Annotated[int, Field(strict=True, ge=0, lt=36)]
+
+    def to_key_index(self) -> KeyIndex:
+        # map the 0-34 range to the 0-87 range
+        octave = self.value // 5
+        key_in_octave = self.value % 5
+        offsets = [1, 3, 6, 8, 10]
+        index = octave * 12 + offsets[key_in_octave]
+        return KeyIndex(value=index)
+
+
 class InvalidNumOfKeySegmentsError(Exception):
-    def __init__(self, expected_num_keys: int, actual_num_keys: int, key_name: str) -> None:
+    def __init__(
+        self, expected_num_keys: int, actual_num_keys: int, key_name: str
+    ) -> None:
         self.expected_keys = expected_num_keys
         self.actual_keys = actual_num_keys
         msg = f"Did not detect {expected_num_keys} {key_name} keys, instead got {actual_num_keys}"
         super().__init__(msg)
 
 
-
 class KeySegment(BaseModel):
-    start: int # in pixels
-    end: int # in pixels
+    start: int  # in pixels
+    end: int  # in pixels
+
+
 class KeySegments(BaseModelYaml, validate_assignment=True):
     white: list[KeySegment] | None = None
     black: list[KeySegment] | None = None

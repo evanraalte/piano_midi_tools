@@ -27,7 +27,7 @@ class TimeSlicer:
             timeslice = []
 
             cap.set_frame(_frame_start)
-            for frame in cap.read_range(_frame_start, _frame_end):
+            for frame, _ in cap.read_range(_frame_start, _frame_end):
                 scan_line = frame[scan_line_px, :, :]
                 timeslice.append(scan_line)
 

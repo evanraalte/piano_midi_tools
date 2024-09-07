@@ -31,7 +31,8 @@ ignore = [
     "T201", # Prints are not OK, but there is a lot of work to do on a debugging mechanism
     "RET504", # it is actually nice to put breakpoints after assignments before returns
     "BLE001", # general exceptions are accepted for now
-    "COM812", "ISC001" # Ruff recommends disabling these rules
+    "COM812", "ISC001", # Ruff recommends disabling these rules
+    "ERA001", # commented out code, we are in poc phase
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -39,3 +40,10 @@ ignore = [
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+
+[tool.uv]
+dev-dependencies = [
+    "pytest>=8.3.2",
+    "pytest-watcher>=0.4.3",
+    "types-pyyaml>=6.0.12.20240808",
+]
