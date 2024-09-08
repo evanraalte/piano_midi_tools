@@ -96,6 +96,14 @@ def video_to_midi(
         Path,
         typer.Option("--midi-path", help="Path to store the midi file to"),
     ],
+    frame_start: Annotated[
+        int,
+        typer.Option("--frame-start", help="Frame start for the timeslice"),
+    ] = 0,
+    frame_end: Annotated[
+        int | None,
+        typer.Option("--frame-end", help="Frame end for the timeslice"),
+    ] = None,
 ) -> None:
     typer.echo(f"Starting video to midi with image path: {video_path}")
     video_capture = VideoCapture(video_path)
@@ -105,7 +113,7 @@ def video_to_midi(
     key_press_detector = KeyPressDetector(
         video_capture=video_capture, key_segments=key_segments, key_colors=key_colors
     )
-    key_press_detector.run(key_sequence_writer=key_sequence_writer)
+    key_press_detector.run(key_sequence_writer=key_sequence_writer, frame_start=frame_start, frame_end=frame_end)
 
 
 if __name__ == "__main__":

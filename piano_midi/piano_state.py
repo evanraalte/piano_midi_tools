@@ -29,21 +29,14 @@ class PianoState:
         self.state: set[PianoPress] = set()
 
     def _set_key(self, key_index: KeyIndex, *, is_pressed: bool, hand: Hand) -> None:
-        state_changed = False
-
         # Key is currently not pressed and is being pressed
         piano_press = PianoPress(index=key_index.value, hand=hand)
         if is_pressed and piano_press not in self.state:
             self.state.add(PianoPress(index=key_index.value, hand=hand))
-            state_changed = True
         # Key is currently pressed by hand X and is being released by hand X
         elif not is_pressed and piano_press in self.state:
             self.state.remove(PianoPress(index=key_index.value, hand=hand))
-            state_changed = True
 
-        if state_changed:
-            text = "pressed" if is_pressed else "released"
-            print(f"key {key_index.value} is {text} by {hand}")
 
     def set_white_key(
         self, white_key_idx: int, *, is_pressed: bool, hand: Hand

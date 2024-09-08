@@ -19,19 +19,29 @@ class KeyPressDetector:
         self.video_capture = video_capture
         self.key_segments = key_segments
         self.key_colors = key_colors
-        self.scan_line_px = 100
 
         self.piano_state = PianoState()
 
-    def _is_key_pressed(self, mask: np.ndarray, key_segment: KeySegment) -> bool:
+    def _is_key_pressed(
+        self,
+        mask: np.ndarray,
+        key_segment: KeySegment,
+    ) -> bool:
         # Implementation for checking if a segment is 'on'
         return bool(np.any(mask[:, key_segment.start : key_segment.end]) > 0)
 
-    def run(self, *, key_sequence_writer: KeySequenceWriter) -> None:
+    def run(
+        self,
+        *,
+        key_sequence_writer: KeySequenceWriter,
+        scan_line_px: int = 100,
+        frame_start: int,
+        frame_end: int | None,
+    ) -> None:
         with self.video_capture as cap:
-            for frame, frame_num in cap.read_range():
+            for frame, frame_num in cap.read_range(frame_start, frame_end):
                 # read line  of frame
-                line = frame[self.scan_line_px : self.scan_line_px + 1, :, :]
+                line = frame[scan_line_px : scan_line_px + 1, :, :]
                 line_hsv = cv2.cvtColor(line, cv2.COLOR_BGR2HSV)
 
                 left_white = cv2.inRange(
@@ -85,6 +95,5 @@ class KeyPressDetector:
 
                 changes = next_piano_state.detect_changes(self.piano_state)
                 if changes.pressed or changes.released:
-                    key_sequence_writer.process_change(changes)
-                    print(f"during frame {frame_num}")
+                    key_sequence_writer.process_change(changes, frame_num)
                 self.piano_state = next_piano_state
