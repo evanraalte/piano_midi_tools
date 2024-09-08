@@ -26,10 +26,9 @@ class KeyPressDetector:
         self,
         mask: np.ndarray,
         key_segment: KeySegment,
-        threshold: int = 5,
     ) -> bool:
-        # Implementation for checking if a segment is 'on'
-        return bool(
+        threshold = self.video_capture.width // 256  # avoid glitches
+        return (
             np.count_nonzero(mask[:, key_segment.start : key_segment.end]) > threshold
         )
 
