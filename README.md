@@ -50,6 +50,8 @@ These tools work together to create a seamless conversion process, guided by YAM
 uv run main.py color-picker --video-path test.mp4 --colors-path colors.yaml --frame-end 250
 ```
 
+The Color Picker tool is an essential first step in the conversion process. It allows you to identify and select the specific colors used in the Synthesia video to represent pressed keys for both the left and right hands. This tool presents you with a composite image created from multiple frames of the video, showing the range of colors used. Your task is to adjust the HSV (Hue, Saturation, Value) color ranges for each hand and key type (left white, left black, right white, right black) so that only the desired color is visible in the filtered view. This calibration ensures that the Video-to-MIDI converter can accurately detect when keys are pressed in the full video. You can click on the original image to automatically generate initial filter values, which you can then fine-tune manually. Remember to save each color configuration using the corresponding keyboard shortcuts before moving on to the next one.
+
 ![Color Picker UI](docs/image-2.png)
 
 Use the keyboard to save color ranges:
