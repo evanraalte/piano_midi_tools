@@ -9,14 +9,9 @@ class TimeSlicer:
         self.video_capture = video_capture
 
     def generate(
-        self, frame_start: int, frame_end: int | None, scan_line_pct: int
+        self, frame_start: int, frame_end: int | None, scan_line_px: int
     ) -> np.ndarray:
         with self.video_capture as cap:
-            if cap.height:
-                scan_line_px = int(cap.height * scan_line_pct / 100)
-            else:
-                typer.echo(message="VideoCapture does not have a height")
-                typer.Exit(code=1)
             _frame_start = frame_start or 0
             if cap.frame_count:
                 _frame_end = min(frame_end or cap.frame_count - 1, cap.frame_count - 1)

@@ -17,7 +17,7 @@
                 "--colors-path",
                 "colors.yaml",
                 "--frame-end",
-                "400"
+                "250"
 
             ]
         },
@@ -52,9 +52,10 @@
                 "colors.yaml",
                 "--midi-path",
                 "output.midi",
-                "--frame-end",
-                "400"
-
+                // "--frame-start",
+                // "150",
+                // "--frame-end",
+                // "300",
             ]
         },
     ]

@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, cast
 
 import typer
 
@@ -60,16 +60,12 @@ def color_picker(
         int | None,
         typer.Option("--frame-end", help="Frame end for the timeslice"),
     ] = None,
-    scan_line_pct: Annotated[
-        int,
-        typer.Option("--scan-line-pct", help="Percentage of the scan line"),
-    ] = 0,
 ) -> None:
     typer.echo(f"Starting color picker with image path: {video_path}")
     video_capture = VideoCapture(video_path)
     time_slicer = TimeSlicer(video_capture)
     time_slice = time_slicer.generate(
-        frame_start=frame_start, frame_end=frame_end, scan_line_pct=scan_line_pct
+        frame_start=frame_start, frame_end=frame_end, scan_line_px=100
     )
     color_picker = ColorPicker(time_slice=time_slice, colors_path=colors_path)
     color_picker.run()
@@ -109,11 +105,17 @@ def video_to_midi(
     video_capture = VideoCapture(video_path)
     key_segments = KeySegments.from_yaml(key_segments_path)
     key_colors = KeyColors.from_yaml(colors_path)
-    key_sequence_writer = KeySequenceWriter(midi_file_path=midi_path)
+    with video_capture as cap:
+        key_sequence_writer = KeySequenceWriter(fps=cast(float,cap.fps))
     key_press_detector = KeyPressDetector(
         video_capture=video_capture, key_segments=key_segments, key_colors=key_colors
     )
-    key_press_detector.run(key_sequence_writer=key_sequence_writer, frame_start=frame_start, frame_end=frame_end)
+    key_press_detector.run(
+        key_sequence_writer=key_sequence_writer,
+        frame_start=frame_start,
+        frame_end=frame_end,
+    )
+    key_sequence_writer.save(midi_file_path=midi_path)
 
 
 if __name__ == "__main__":

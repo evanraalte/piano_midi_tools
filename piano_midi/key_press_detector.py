@@ -26,9 +26,12 @@ class KeyPressDetector:
         self,
         mask: np.ndarray,
         key_segment: KeySegment,
+        threshold: int = 5,
     ) -> bool:
         # Implementation for checking if a segment is 'on'
-        return bool(np.any(mask[:, key_segment.start : key_segment.end]) > 0)
+        return bool(
+            np.count_nonzero(mask[:, key_segment.start : key_segment.end]) > threshold
+        )
 
     def run(
         self,
@@ -64,6 +67,11 @@ class KeyPressDetector:
                     cast(HSVRange, self.key_colors.right_black).lower(),
                     cast(HSVRange, self.key_colors.right_black).upper(),
                 )
+
+                # # draw scan line in frame
+                # cv2.line(frame, (0, scan_line_px), (frame.shape[1], scan_line_px), (0, 255, 0), 2)
+                # cv2.imshow("frame", frame)
+                # cv2.waitKey(0)
 
                 next_piano_state = self.piano_state.copy()
                 for key_idx, segment in enumerate(

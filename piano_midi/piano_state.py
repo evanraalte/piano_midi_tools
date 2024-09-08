@@ -37,11 +37,11 @@ class PianoState:
         elif not is_pressed and piano_press in self.state:
             self.state.remove(PianoPress(index=key_index.value, hand=hand))
 
-
     def set_white_key(
         self, white_key_idx: int, *, is_pressed: bool, hand: Hand
     ) -> None:
-        key_index = WhiteKeyIndex(value=white_key_idx).to_key_index()
+        white_key_index = WhiteKeyIndex(value=white_key_idx)
+        key_index = white_key_index.to_key_index()
         self._set_key(key_index, is_pressed=is_pressed, hand=hand)
 
     def set_black_key(
