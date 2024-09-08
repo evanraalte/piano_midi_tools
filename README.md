@@ -1,117 +1,120 @@
-# Piano midi tools
+# Piano MIDI Tools
 
-Some people do amazing covers of existing songs, but don't sell any sheet music.. This tool aids you to convert [Synthesia](https://synthesiagame.com/) based piano tutorials to midi files. Midi files can be converted to sheet music with tools like [Musescore](https://musescore.org/en). I also wrote a blog post with more background on this on [my website](https://blog.evanraalte.nl/). I actually made a tool to do this [before](https://github.com/evanraalte/piano_tutorial_to_midi), but most of the time was actually spend on the user interface. This caused feature creep, which harmed the actual usefulness of the application. This time I tried to keep it a lot simpler. No more fancy do-it-all application, but a set of utilities that you can use as you see fit.
+Convert Synthesia-based piano tutorials to MIDI files with ease!
 
-![alt text](docs/image.png)
+![Synthesia Tutorial Example](docs/image.png)
 
+## 🎹 Overview
 
-## 🚁 Structure
-There are three main parts to this utility.
-- A tool to select the 'pressed' colors, that are mapped to either the left or right hand (`color-picker`)
-- A tool to find black and white key segments in the video (`key-picker`)
-- A tool to convert a video to a midi file (`video-to-midi`)
-- (external) [`yt-dlp`](https://github.com/yt-dlp/yt-dlp), to help you with gathering material that you want to convert.
+Many talented musicians create amazing covers of existing songs but don't provide sheet music. This tool bridges that gap by helping you convert [Synthesia](https://synthesiagame.com/) piano tutorials to MIDI files. These MIDI files can then be transformed into sheet music using tools like [MuseScore](https://musescore.org/en).
 
-The first two tools are used to extract parameters (in `yaml` format), that are used to do the video to midi conversion. This diagram hopefully explains it better:
+For more background on this project, check out the [blog post on my website](https://blog.evanraalte.nl/).
 
-![alt text](docs/image-1.png)
+## 🚀 Features
 
-## Installation
+- Color picker: Select 'pressed' key colors for left and right hands
+- Key picker: Identify black and white key segments in the video
+- Video-to-MIDI converter: Transform video tutorials into playable MIDI files
+- Integration with [`yt-dlp`](https://github.com/yt-dlp/yt-dlp) for easy video downloading
 
-First clone this repo. The dependencies are managed by [uv](https://docs.astral.sh/uv/). Once you enter the root of this project. Simply run: `uv sync` to install all neccesary dependencies. From there, you are all set!
+## 🏗️ Project Structure
 
-## Running the applications
+![Project Structure](docs/image-1.png)
 
-The aforementioned tools are ran using commands, e.g.:
+The project consists of three main components:
 
-Every one of these commands has a help, which explains what you need to provide.
+1. **Color Picker**: Extract color parameters for pressed keys
+2. **Key Picker**: Identify piano key segments in the video
+3. **Video-to-MIDI Converter**: Generate MIDI files from video tutorials
 
-``` bash
-uv run main.py color-picker <args>
-uv run main.py key-picker <args>
-uv run main.py video-to-midi <args>
-```
+These tools work together to create a seamless conversion process, guided by YAML configuration files.
 
-### Color-picker
+## 🛠️ Installation
 
-Even though most development time on the last version was spent on the UI, my skillset in this field is quite limited. That is why I decided to stick with some simple OpenCV primitives.
+1. Clone this repository:
+   ```bash
+   git clone https://github.com/yourusername/piano-midi-tools.git
+   cd piano-midi-tools
+   ```
 
-The app is started like this:
+2. Install dependencies using [uv](https://docs.astral.sh/uv/):
+   ```bash
+   uv sync
+   ```
+
+## 🎵 Usage
+
+### Color Picker
+
 ```bash
 uv run main.py color-picker --video-path test.mp4 --colors-path colors.yaml --frame-end 250
 ```
-After that, It presents you with an ui like this:
-![alt text](docs/image-2.png)
 
-It takes a 'slice' from each of the 250 frames, so that you hopefully get a good representation of all four colors.
+![Color Picker UI](docs/image-2.png)
 
-Your job is to select HSV color ranges, such that only one of the four colors in the original image is visible and the rest is blackened out. If you click on the original image, it tries to find filters for you automagically. You might need to adjust those. In the example above, I filtered on the black keys of the right hand. We have for colors to save. You may ask how is that done in this primitive OpenCV layout?
-The answer is simple, you use your keyboard like they did in the old days.
-- Left white: 'q' / '1' to load/save
-- Left black 'w' / '2' to load/save
-- Right white: 'e' / '3' to load/save
-- Right black: 'r' / '4' to load/save (so to store our filter for black key/right hand, we'd use this one)
+Use the keyboard to save color ranges:
+- Left white: 'q' (load) / '1' (save)
+- Left black: 'w' (load) / '2' (save)
+- Right white: 'e' (load) / '3' (save)
+- Right black: 'r' (load) / '4' (save)
 
-After saving, the color ranges are stored in `colors.yaml`, e.g.:
-```yaml
-right_black:
-  h:
-    max: 54
-    min: 34
-  s:
-    max: 255
-    min: 188
-  v:
-    max: 184
-    min: 104
-```
+Exit the tool by pressing `ESC`.
 
-This file is the first dependency for our video conversion! Exit the tool by pressing `ESC`.
+### Key Picker
 
-### Key-picker
-
-The key picker is used to create key segments, that are needed to distinguish piano keys in the video conversion. The UI is started like this:
 ```bash
 uv run main.py key-picker --video-path test.mp4 --key-segments-path keys.yaml
 ```
 
-And it looks like this:
-![alt text](docs/image-3.png)
+The Key Picker tool helps you identify white and black key segments in the video. Here's how to use it:
 
-It looks a bit like the previous UI, but this time you have to first move the green bar (you can use the slider or clikc) to the piano keys, and then adjust the filters such that it masks out everything but the white keys. You should end up with 52 segments:
-![alt text](docs/image-4.png)
+1. Adjust the green bar to align with piano keys:
+   - Click directly on the video image to move the green bar to that position, or
+   - Use the slider called 'h_scanline_pct'
+2. Modify filters to isolate white keys (52 segments)
+3. Press 'w' to save white key segments
+4. Repeat the process for black keys (36 segments)
+5. Press 'b' to save black key segments
+6. Press 'ESC' to exit the application
 
-Then press 'w' to save (it only allows you if you have 52 segments, ie the number of white keys).
+| White Key Selection | Black Key Selection |
+|---------------------|---------------------|
+| ![White Key Selection](docs/image-4.png) | ![Black Key Selection](docs/image-5.png) |
 
-For black we do the save, adjust the filter and line:
-![alt text](docs/image-5.png)
+For white keys:
+- Adjust filters to mask out everything but the white keys
+- Aim for 52 segments (the number of white keys on a standard piano)
+- Press 'w' to save once you have 52 segments (it won't save otherwise)
 
-Then press 'b' to save (we expect 36 segments this time)
+For black keys:
+- Adjust filters and line to isolate black keys
+- Aim for 36 segments (the number of black keys on a standard piano)
+- Press 'b' to save once you have 36 segments (it won't save otherwise)
 
+Remember, you can always readjust the green bar by clicking on the image or using the slider if needed.
 
-### Video-to-midi
+### Video-to-MIDI Converter
 
-Finally, we are ready to start the conversion:
 ```bash
-uv run main.py video-to-midi --video-path test2.mp4 --key-segments-path keys.yaml --colors-path colors.yaml --midi-path output2.midi
+uv run main.py video-to-midi --video-path test.mp4 --key-segments-path keys.yaml --colors-path colors.yaml --midi-path output.midi
 ```
 
-You then see logs like:
-```
-Starting video to midi with image path: test2.mp4
-Key 27 (C3) pressed by Hand.LEFT
-during frame 56
-Key 27 (C3) released by Hand.LEFT
-during frame 81
-Key 34 (G3) pressed by Hand.LEFT
-during frame 82
-Key 34 (G3) released by Hand.LEFT
-during frame 93
-Key 27 (C3) pressed by Hand.LEFT
-during frame 96
-Key 38 (B3) pressed by Hand.LEFT
-Key 27 (C3) released by Hand.LEFT
-during frame 125
-```
+This will process the video and generate a MIDI file based on the detected key presses.
 
-And finally, a midi file is stored. We're done! The midi file you can import in Musescore. Happy practicing!
+## 🎼 Next Steps
+
+After generating your MIDI file, import it into MuseScore or your preferred notation software to create sheet music. Happy practicing!
+
+## 📝 Notes
+
+- This project is a reimagining of a [previous attempt](https://github.com/evanraalte/piano_tutorial_to_midi). While the earlier version focused on creating a comprehensive, all-in-one tool with a complex user interface, this new iteration prioritizes core functionality and simplicity.
+- The current version provides a set of streamlined utilities that users can combine as needed, avoiding feature creep and enhancing overall usefulness.
+- The tools use basic OpenCV primitives for simplicity and efficiency.
+
+## 🤝 Contributing
+
+Contributions, issues, and feature requests are welcome! Feel free to check the [issues page](https://github.com/evanraalte/piano_midi/issues) if you want to contribute.
+
+## 📄 License
+
+This project is licensed under the [MIT License](LICENSE).
