@@ -42,6 +42,8 @@ ESC_KEY = 27
 class BaseModelYaml(BaseModel):
     @classmethod
     def from_yaml(cls, yaml_path: Path) -> Self:
+        if not yaml_path.exists():
+            yaml_path.touch()
         with yaml_path.open("r") as file:
             data = yaml.safe_load(file)
         try:
