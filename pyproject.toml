@@ -19,26 +19,28 @@ dependencies = [
 [tool.ruff.lint]
 select = ["ALL"]
 ignore = [
-    "D", # docstrings we don't really care about for now
-    "FIX002", # TODO's are OK for now
-    "E501", # longer comments are okay
-    "TD", # no specific rules for TODO's
-    "PT011", # ValueErrors are OK for now
-    "FA102", # Only an issue for older python version
+    "D",       # docstrings we don't really care about for now
+    "FIX002",  # TODO's are OK for now
+    "E501",    # longer comments are okay
+    "TD",      # no specific rules for TODO's
+    "PT011",   # ValueErrors are OK for now
+    "FA102",   # Only an issue for older python version
     "PLR0913", # Too many arguments in function is not an issue for now
-    "T201", # Prints are not OK, but there is a lot of work to do on a debugging mechanism
-    "RET504", # it is actually nice to put breakpoints after assignments before returns
-    "BLE001", # general exceptions are accepted for now
-    "COM812", "ISC001", # Ruff recommends disabling these rules
-    "ERA001", # commented out code, we are in poc phase
+    "T201",    # Prints are not OK, but there is a lot of work to do on a debugging mechanism
+    "RET504",  # it is actually nice to put breakpoints after assignments before returns
+    "BLE001",  # general exceptions are accepted for now
+    "COM812",
+    "ISC001",  # Ruff recommends disabling these rules
+    "ERA001",  # commented out code, we are in poc phase
 ]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["S101"]
 
-[tool.uv]
-dev-dependencies = [
+[dependency-groups]
+dev = [
     "pytest>=8.3.2",
     "pytest-watcher>=0.4.3",
     "types-pyyaml>=6.0.12.20240808",
 ]
+lint = ["ruff>=0.11.2"]
