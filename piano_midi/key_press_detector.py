@@ -48,23 +48,23 @@ class KeyPressDetector:
 
                 left_white = cv2.inRange(
                     line_hsv,
-                    cast(HSVRange, self.key_colors.left_white).lower(),
-                    cast(HSVRange, self.key_colors.left_white).upper(),
+                    cast("HSVRange", self.key_colors.left_white).lower(),
+                    cast("HSVRange", self.key_colors.left_white).upper(),
                 )
                 left_black = cv2.inRange(
                     line_hsv,
-                    cast(HSVRange, self.key_colors.left_black).lower(),
-                    cast(HSVRange, self.key_colors.left_black).upper(),
+                    cast("HSVRange", self.key_colors.left_black).lower(),
+                    cast("HSVRange", self.key_colors.left_black).upper(),
                 )
                 right_white = cv2.inRange(
                     line_hsv,
-                    cast(HSVRange, self.key_colors.right_white).lower(),
-                    cast(HSVRange, self.key_colors.right_white).upper(),
+                    cast("HSVRange", self.key_colors.right_white).lower(),
+                    cast("HSVRange", self.key_colors.right_white).upper(),
                 )
                 right_black = cv2.inRange(
                     line_hsv,
-                    cast(HSVRange, self.key_colors.right_black).lower(),
-                    cast(HSVRange, self.key_colors.right_black).upper(),
+                    cast("HSVRange", self.key_colors.right_black).lower(),
+                    cast("HSVRange", self.key_colors.right_black).upper(),
                 )
 
                 # # draw scan line in frame
@@ -74,7 +74,7 @@ class KeyPressDetector:
 
                 next_piano_state = self.piano_state.copy()
                 for key_idx, segment in enumerate(
-                    cast(list[KeySegment], self.key_segments.white)
+                    cast("list[KeySegment]", self.key_segments.white)
                 ):
                     next_piano_state.set_white_key(
                         key_idx,
@@ -87,7 +87,7 @@ class KeyPressDetector:
                         hand=Hand.RIGHT,
                     )
                 for key_idx, segment in enumerate(
-                    cast(list[KeySegment], self.key_segments.black)
+                    cast("list[KeySegment]", self.key_segments.black)
                 ):
                     next_piano_state.set_black_key(
                         key_idx,

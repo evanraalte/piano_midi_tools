@@ -14,6 +14,7 @@ from piano_midi.models import (
     PianoKey,
     Range,
 )
+from piano_midi.video_capture import VideoCapture
 
 
 class KeyPicker:
@@ -46,6 +47,12 @@ class KeyPicker:
             v=Range(min=v_min, max=v_max),
         )
 
+    def _get_frame_number(self) -> int:
+        return cv2.getTrackbarPos("frame_number", self.WIN_NAME_HSV_MASK_CREATOR)
+
+    def _set_frame_number(self, frame_number: int) -> None:
+        cv2.setTrackbarPos("frame_number", self.WIN_NAME_HSV_MASK_CREATOR, frame_number)
+
     def click_event(self, event, x, y, flags, param) -> None:  # noqa: ANN001, ARG002
         if event == cv2.EVENT_LBUTTONDOWN:
             # sets the scanline to the clicked y position
@@ -75,16 +82,26 @@ class KeyPicker:
             "h_scanline_pct", self.WIN_NAME_HSV_MASK_CREATOR, 0, 100, lambda _: None
         )
 
+        cv2.createTrackbar(
+            "frame_number",
+            self.WIN_NAME_HSV_MASK_CREATOR,
+            0,
+            self.total_frames - 1,
+            lambda _: None,
+        )
+
     def _create_windows(self) -> None:
         cv2.namedWindow(self.WIN_NAME_HSV_MASK_CREATOR)
         cv2.setMouseCallback(self.WIN_NAME_HSV_MASK_CREATOR, self.click_event)
 
-    def __init__(self, frame: np.ndarray, key_segments_path: Path) -> None:
-        self.image = frame
-        self.key_segments_path = key_segments_path
-        self.image_height = self.image.shape[0]
-        self.image_width = self.image.shape[1]
-        self.hsv = cv2.cvtColor(self.image, cv2.COLOR_BGR2HSV)
+    def __init__(self, video_capture: VideoCapture, key_segments_path: Path) -> None:
+        self.video_capture: VideoCapture = video_capture
+        self.key_segments_path: Path = key_segments_path
+        self.total_frames: int = video_capture.frame_count
+        self.image: np.ndarray = video_capture.get_frame(0)
+        self.image_height: int = self.image.shape[0]
+        self.image_width: int = self.image.shape[1]
+        self.hsv: np.ndarray = cv2.cvtColor(self.image, cv2.COLOR_BGR2HSV)
 
     def _reset(self) -> None:
         # reset trackbars
@@ -133,9 +150,15 @@ class KeyPicker:
         ]
         return key_segments
 
+    def _update_frame(self) -> None:
+        frame_number: int = self._get_frame_number()
+        self.image = self.video_capture.get_frame(frame_number)
+        self.hsv = cv2.cvtColor(self.image, cv2.COLOR_BGR2HSV)
+
     def _loop(self) -> None:
         running = True
         while running:
+            self._update_frame()
             hsv_range = self._get_hsv_trackbar_pos()
             height_pct = self._get_scanline_pct()
             height_px = int(self.image_height * height_pct / 100) - 1
@@ -204,5 +227,5 @@ class KeyPicker:
 
     def run(self) -> None:
         self._create_windows()
-        self.create_trackbars()
+        self.create_trackbars()  # Ensure trackbars are created after the window
         self._loop()
