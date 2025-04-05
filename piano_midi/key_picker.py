@@ -1,3 +1,4 @@
+import time  # Add this import
 from pathlib import Path
 
 import cv2
@@ -102,6 +103,8 @@ class KeyPicker:
         self.image_height: int = self.image.shape[0]
         self.image_width: int = self.image.shape[1]
         self.hsv: np.ndarray = cv2.cvtColor(self.image, cv2.COLOR_BGR2HSV)
+        self.last_process_time: float = 0  # Track the last processing time
+        self.throttle_delay: float = 0.05  # Throttle delay in seconds (50ms)
 
     def _reset(self) -> None:
         # reset trackbars
@@ -157,63 +160,86 @@ class KeyPicker:
 
     def _loop(self) -> None:
         running = True
+        last_hsv_range = None
+        last_height_pct = None
+        last_frame_number = -1
+
         while running:
-            self._update_frame()
+            current_frame_number = self._get_frame_number()
             hsv_range = self._get_hsv_trackbar_pos()
             height_pct = self._get_scanline_pct()
-            height_px = int(self.image_height * height_pct / 100) - 1
-            mask = cv2.inRange(self.hsv, hsv_range.lower(), hsv_range.upper())
-            masked_image = cv2.bitwise_and(self.image, self.image, mask=mask)
-            # on the result, every non black pixel is white
-            # so we can use the scanline to find the segments
-            # draw line
-            # make a copy of the image
-            masked_image_with_overlay = masked_image.copy()
-            cv2.line(
-                masked_image_with_overlay,
-                (0, height_px),
-                (self.image.shape[1], height_px),
-                (0, 255, 0),
-                2,
-            )
 
-            # save a copy of result, with intersection of scanline (ie 1d array)
-            line = masked_image[height_px, :, :]
-            key_segments = self._get_key_segments(masked_scanline=line)
+            current_time = time.time()
+            time_since_last_process = current_time - self.last_process_time
 
-            # draw number of segments somewhere on the image
-            cv2.putText(
-                masked_image_with_overlay,
-                f"Num of segments: {len(key_segments)}",
-                (10, 30),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                1,
-                (0, 255, 0),
-                2,
-            )
+            should_process = (
+                hsv_range != last_hsv_range
+                or height_pct != last_height_pct
+                or current_frame_number != last_frame_number
+            ) and time_since_last_process >= self.throttle_delay
 
-            # draw segments on result_with_line in red:
-            # specifically, draw thick dots on the start and end of each segment
-            for segment in key_segments:
-                cv2.circle(
+            if should_process:
+                if current_frame_number != last_frame_number:
+                    self._update_frame()
+
+                height_px = int(self.image_height * height_pct / 100) - 1
+                mask = cv2.inRange(self.hsv, hsv_range.lower(), hsv_range.upper())
+                masked_image = cv2.bitwise_and(self.image, self.image, mask=mask)
+                # on the result, every non black pixel is white
+                # so we can use the scanline to find the segments
+                # draw line
+                # make a copy of the image
+                masked_image_with_overlay = masked_image.copy()
+                cv2.line(
                     masked_image_with_overlay,
-                    (segment.start, height_px),
-                    5,
-                    (0, 0, 255),
-                    -1,
+                    (0, height_px),
+                    (self.image.shape[1], height_px),
+                    (0, 255, 0),
+                    2,
                 )
-                cv2.circle(
+
+                # save a copy of result, with intersection of scanline (ie 1d array)
+                line = masked_image[height_px, :, :]
+                key_segments = self._get_key_segments(masked_scanline=line)
+
+                # draw number of segments somewhere on the image
+                cv2.putText(
                     masked_image_with_overlay,
-                    (segment.end, height_px),
-                    5,
-                    (255, 0, 0),
-                    -1,
+                    f"Num of segments: {len(key_segments)}",
+                    (10, 30),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    1,
+                    (0, 255, 0),
+                    2,
                 )
-            cv2.imshow(self.WIN_NAME_HSV_MASK_CREATOR, masked_image_with_overlay)
 
-            # show segments on image
+                # draw segments on result_with_line in red:
+                # specifically, draw thick dots on the start and end of each segment
+                for segment in key_segments:
+                    cv2.circle(
+                        masked_image_with_overlay,
+                        (segment.start, height_px),
+                        5,
+                        (0, 0, 255),
+                        -1,
+                    )
+                    cv2.circle(
+                        masked_image_with_overlay,
+                        (segment.end, height_px),
+                        5,
+                        (255, 0, 0),
+                        -1,
+                    )
+                cv2.imshow(self.WIN_NAME_HSV_MASK_CREATOR, masked_image_with_overlay)
 
-            key = cv2.waitKey(1) & 0xFF
+                last_hsv_range = hsv_range
+                last_height_pct = height_pct
+                last_frame_number = current_frame_number
+                self.last_process_time = current_time
+
+            key = (
+                cv2.waitKey(30) & 0xFF
+            )  # Increased from 10ms to 30ms for better processing time
             if key == ESC_KEY:
                 running = False
             if key == ord("w"):

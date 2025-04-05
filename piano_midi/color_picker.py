@@ -1,3 +1,4 @@
+import time  # Add this import
 from pathlib import Path
 
 import cv2
@@ -82,6 +83,8 @@ class ColorPicker:
         self.image = time_slice
         self.colors_path = colors_path
         self.hsv = cv2.cvtColor(self.image, cv2.COLOR_BGR2HSV)
+        self.last_process_time: float = 0  # Track the last processing time
+        self.throttle_delay: float = 0.05  # Throttle delay in seconds (50ms)
 
     def save_color(self, key_color: KeyColor, hsv_range: HSVRange) -> None:
         key_colors = KeyColors.from_yaml(self.colors_path)
@@ -114,17 +117,24 @@ class ColorPicker:
 
         while running:
             hsv_range = self._get_trackbar_pos()
+            current_time = time.time()
+            time_since_last_process = current_time - self.last_process_time
 
-            # Only recalculate mask and result if HSV range has changed
-            if last_hsv_range is None or hsv_range != last_hsv_range:
+            # Only recalculate mask and result if HSV range has changed AND enough time has passed
+            if (
+                last_hsv_range is None or hsv_range != last_hsv_range
+            ) and time_since_last_process >= self.throttle_delay:
                 mask = cv2.inRange(self.hsv, hsv_range.lower(), hsv_range.upper())
                 result = cv2.bitwise_and(self.image, self.image, mask=mask)
                 last_hsv_range = hsv_range
+                self.last_process_time = current_time
 
             cv2.imshow(self.WIN_NAME_HSV_MASK_CREATOR, result)
             cv2.imshow(self.WIN_NAME_ORIGINAL_IMAGE, self.image)
 
-            key = cv2.waitKey(10) & 0xFF
+            key = (
+                cv2.waitKey(30) & 0xFF
+            )  # Increased from 10ms to 30ms for better processing time
             if key == ESC_KEY:
                 running = False
             elif key in (ord("1"), ord("2"), ord("3"), ord("4")):
