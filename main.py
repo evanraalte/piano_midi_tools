@@ -31,12 +31,11 @@ def key_picker(
         typer.Option("--key-segments-path", help="Path to store the keysegments to"),
     ],
 ) -> None:
-    typer.echo(f"Starting key picker with image path: {video_path}")
+    typer.echo(f"Starting key picker with video path: {video_path}")
     video_capture = VideoCapture(video_path)
     with video_capture as cap:
-        frame = cap.get_frame(frame_number=0)
-    key_picker = KeyPicker(frame=frame, key_segments_path=key_segments_path)
-    key_picker.run()
+        key_picker = KeyPicker(video_capture=cap, key_segments_path=key_segments_path)
+        key_picker.run()
 
 
 @app.command()
@@ -106,7 +105,7 @@ def video_to_midi(
     key_segments = KeySegments.from_yaml(key_segments_path)
     key_colors = KeyColors.from_yaml(colors_path)
     with video_capture as cap:
-        key_sequence_writer = KeySequenceWriter(fps=cast(float,cap.fps))
+        key_sequence_writer = KeySequenceWriter(fps=cast("float", cap.fps))
     key_press_detector = KeyPressDetector(
         video_capture=video_capture, key_segments=key_segments, key_colors=key_colors
     )

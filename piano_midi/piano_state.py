@@ -5,7 +5,7 @@ from typing import Annotated
 
 from pydantic import BaseModel, Field
 
-from piano_midi.models import BlackKeyIndex, Hand, KeyIndex, WhiteKeyIndex
+from piano_midi.models import Hand, KeyIndex
 
 
 class PianoChanges(BaseModel):
@@ -40,14 +40,13 @@ class PianoState:
     def set_white_key(
         self, white_key_idx: int, *, is_pressed: bool, hand: Hand
     ) -> None:
-        white_key_index = WhiteKeyIndex(value=white_key_idx)
-        key_index = white_key_index.to_key_index()
+        key_index = KeyIndex.from_white_key_index(white_key_idx)
         self._set_key(key_index, is_pressed=is_pressed, hand=hand)
 
     def set_black_key(
         self, black_key_idx: int, *, is_pressed: bool, hand: Hand
     ) -> None:
-        key_index = BlackKeyIndex(value=black_key_idx).to_key_index()
+        key_index = KeyIndex.from_black_key_index(black_key_idx)
         self._set_key(key_index, is_pressed=is_pressed, hand=hand)
 
     def detect_changes(self, old_state: PianoState) -> PianoChanges:

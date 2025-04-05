@@ -1,9 +1,8 @@
-from enum import Enum
+from enum import Enum, auto
 from pathlib import Path
 from typing import Annotated, Self
 
 import numpy as np
-import pydantic
 import yaml
 from pydantic import BaseModel, Field, ValidationError
 
@@ -42,6 +41,8 @@ ESC_KEY = 27
 class BaseModelYaml(BaseModel):
     @classmethod
     def from_yaml(cls, yaml_path: Path) -> Self:
+        if not yaml_path.exists():
+            yaml_path.touch()
         with yaml_path.open("r") as file:
             data = yaml.safe_load(file)
         try:
@@ -54,26 +55,31 @@ class BaseModelYaml(BaseModel):
             file.write(yaml.dump(self.model_dump(mode="json")))
 
 
-class PianoKey(Enum):
+class PianoKeyColor(Enum):
     # store number of expected keys
-    WHITE = 52
-    BLACK = 36
+    WHITE = auto()
+    BLACK = auto()
 
 
 class Hand(Enum):
-    LEFT = 0
-    RIGHT = 1
+    LEFT = auto()
+    RIGHT = auto()
 
 
 class KeyIndex(BaseModel):
     value: Annotated[int, Field(strict=True, ge=0, lt=88)]
 
+    def is_white(self) -> bool:
+        return self.value % 12 in {0, 2, 4, 5, 7, 9, 11}
 
-class WhiteKeyIndex(BaseModel):
-    value: Annotated[int, Field(strict=True, ge=0, lt=52)]
+    def is_black(self) -> bool:
+        return self.value % 12 in {1, 3, 6, 8, 10}
 
-    def to_key_index(self) -> KeyIndex:
-        octave = self.value // 7
+    @classmethod
+    def from_white_key_index(
+        cls, white_key_index: Annotated[int, Field(strict=True, ge=0, lt=52)]
+    ) -> Self:
+        octave = white_key_index // 7
         lut: dict[int, int] = {
             0: 0,
             1: 2,
@@ -83,16 +89,15 @@ class WhiteKeyIndex(BaseModel):
             5: 8,
             6: 10,
         }
-        key = self.value - octave * 7
+        key = white_key_index - octave * 7
         index = lut[key] + octave * 12
         return KeyIndex(value=index)
 
-
-class BlackKeyIndex(BaseModel):
-    value: Annotated[int, Field(strict=True, ge=0, lt=36)]
-
-    def to_key_index(self) -> KeyIndex:
-        octave = self.value // 5
+    @classmethod
+    def from_black_key_index(
+        cls, black_key_index: Annotated[int, Field(strict=True, ge=0, lt=36)]
+    ) -> Self:
+        octave = black_key_index // 5
         lut: dict[int, int] = {
             0: 1,
             1: 4,
@@ -100,7 +105,7 @@ class BlackKeyIndex(BaseModel):
             3: 9,
             4: 11,
         }
-        key = self.value - octave * 5
+        key = black_key_index - octave * 5
         index = lut[key] + octave * 12
         return KeyIndex(value=index)
 
@@ -116,42 +121,17 @@ class InvalidNumOfKeySegmentsError(Exception):
 
 
 class KeySegment(BaseModel):
-    start: int  # in pixels
-    end: int  # in pixels
+    start_px: int
+    end_px: int
 
 
 class KeySegments(BaseModelYaml, validate_assignment=True):
     white: list[KeySegment] | None = None
     black: list[KeySegment] | None = None
 
-    @pydantic.model_validator(mode="after")
-    def validate_num_keys(self) -> Self:
-        expected_white_keys = 52
-        if self.white and len(self.white) != expected_white_keys:
-            raise InvalidNumOfKeySegmentsError(
-                expected_num_keys=expected_white_keys,
-                actual_num_keys=len(self.white),
-                key_name="white",
-            )
-        expected_black_keys = 36
-        if self.black and len(self.black) != expected_black_keys:
-            raise InvalidNumOfKeySegmentsError(
-                expected_num_keys=expected_black_keys,
-                actual_num_keys=len(self.black),
-                key_name="black",
-            )
-        return self
 
-
-class KeyColor(Enum):
-    LEFT_WHITE = 0
-    RIGHT_WHITE = 1
-    LEFT_BLACK = 2
-    RIGHT_BLACK = 3
+KeyColorIndex = tuple[PianoKeyColor, Hand]
 
 
 class KeyColors(BaseModelYaml):
-    left_white: HSVRange | None = None
-    right_white: HSVRange | None = None
-    left_black: HSVRange | None = None
-    right_black: HSVRange | None = None
+    colors: dict[tuple[PianoKeyColor, Hand], HSVRange] = Field(default_factory=dict)

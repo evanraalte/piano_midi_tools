@@ -1,16 +1,16 @@
 import pytest
 
-from piano_midi.models import BlackKeyIndex, WhiteKeyIndex
+from piano_midi.models import KeyIndex
 
 
 def test_white_key_maps_to_key_index() -> None:
     for n in range(52):
-        WhiteKeyIndex(value=n).to_key_index()
+        KeyIndex.from_white_key_index(n)
 
 
 def test_black_key_maps_to_key_index() -> None:
     for n in range(36):
-        BlackKeyIndex(value=n).to_key_index()
+        KeyIndex.from_black_key_index(n)
 
 
 @pytest.mark.parametrize(
@@ -23,7 +23,25 @@ def test_black_key_maps_to_key_index() -> None:
         (4, 11),
     ],
 )
-def test_white_key_maps_correctly_to_key_index(
+def test_black_key_maps_correctly_to_key_index(
     black_key_index: int, key_index: int
 ) -> None:
-    assert BlackKeyIndex(value=black_key_index).to_key_index().value == key_index
+    assert KeyIndex.from_black_key_index(black_key_index).value == key_index
+
+
+@pytest.mark.parametrize(
+    ("white_key_index", "key_index"),
+    [
+        (0, 0),
+        (1, 2),
+        (2, 3),
+        (3, 5),
+        (4, 7),
+        (5, 8),
+        (6, 10),
+    ],
+)
+def test_white_key_maps_correctly_to_key_index(
+    white_key_index: int, key_index: int
+) -> None:
+    assert KeyIndex.from_white_key_index(white_key_index).value == key_index
