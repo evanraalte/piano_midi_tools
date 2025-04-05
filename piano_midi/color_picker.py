@@ -109,18 +109,25 @@ class ColorPicker:
 
     def loop(self) -> None:
         running = True
+        last_hsv_range = None
+        result = None
+
         while running:
             hsv_range = self._get_trackbar_pos()
-            mask = cv2.inRange(self.hsv, hsv_range.lower(), hsv_range.upper())
-            result = cv2.bitwise_and(self.image, self.image, mask=mask)
+
+            # Only recalculate mask and result if HSV range has changed
+            if last_hsv_range is None or hsv_range != last_hsv_range:
+                mask = cv2.inRange(self.hsv, hsv_range.lower(), hsv_range.upper())
+                result = cv2.bitwise_and(self.image, self.image, mask=mask)
+                last_hsv_range = hsv_range
 
             cv2.imshow(self.WIN_NAME_HSV_MASK_CREATOR, result)
             cv2.imshow(self.WIN_NAME_ORIGINAL_IMAGE, self.image)
 
-            key = cv2.waitKey(1) & 0xFF
+            key = cv2.waitKey(10) & 0xFF
             if key == ESC_KEY:
                 running = False
-            if key in (ord("1"), ord("2"), ord("3"), ord("4")):
+            elif key in (ord("1"), ord("2"), ord("3"), ord("4")):
                 values = {
                     "1": KeyColor.LEFT_WHITE,
                     "2": KeyColor.LEFT_BLACK,
@@ -128,7 +135,7 @@ class ColorPicker:
                     "4": KeyColor.RIGHT_BLACK,
                 }
                 self.save_color(key_color=values[chr(key)], hsv_range=hsv_range)
-            if key in (ord("q"), ord("w"), ord("e"), ord("r")):
+            elif key in (ord("q"), ord("w"), ord("e"), ord("r")):
                 values = {
                     "q": KeyColor.LEFT_WHITE,
                     "w": KeyColor.LEFT_BLACK,
@@ -136,8 +143,9 @@ class ColorPicker:
                     "r": KeyColor.RIGHT_BLACK,
                 }
                 self.load_color(key_color=values[chr(key)])
-            if key == ord("z"):
+            elif key == ord("z"):
                 self.reset()
+                last_hsv_range = None  # Force recalculation after reset
 
         cv2.destroyAllWindows()
 
