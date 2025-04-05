@@ -1,9 +1,8 @@
-from enum import Enum
+from enum import Enum, auto
 from pathlib import Path
 from typing import Annotated, Self
 
 import numpy as np
-import pydantic
 import yaml
 from pydantic import BaseModel, Field, ValidationError
 
@@ -56,15 +55,15 @@ class BaseModelYaml(BaseModel):
             file.write(yaml.dump(self.model_dump(mode="json")))
 
 
-class PianoKey(Enum):
+class PianoKeyColor(Enum):
     # store number of expected keys
-    WHITE = 52
-    BLACK = 36
+    WHITE = auto()
+    BLACK = auto()
 
 
 class Hand(Enum):
-    LEFT = 0
-    RIGHT = 1
+    LEFT = auto()
+    RIGHT = auto()
 
 
 class KeyIndex(BaseModel):
@@ -129,24 +128,6 @@ class KeySegment(BaseModel):
 class KeySegments(BaseModelYaml, validate_assignment=True):
     white: list[KeySegment] | None = None
     black: list[KeySegment] | None = None
-
-    @pydantic.model_validator(mode="after")
-    def validate_num_keys(self) -> Self:
-        expected_white_keys = 52
-        if self.white and len(self.white) != expected_white_keys:
-            raise InvalidNumOfKeySegmentsError(
-                expected_num_keys=expected_white_keys,
-                actual_num_keys=len(self.white),
-                key_name="white",
-            )
-        expected_black_keys = 36
-        if self.black and len(self.black) != expected_black_keys:
-            raise InvalidNumOfKeySegmentsError(
-                expected_num_keys=expected_black_keys,
-                actual_num_keys=len(self.black),
-                key_name="black",
-            )
-        return self
 
 
 class KeyColor(Enum):

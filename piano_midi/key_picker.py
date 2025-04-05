@@ -9,10 +9,9 @@ from numpy import ndarray
 from piano_midi.models import (
     ESC_KEY,
     HSVRange,
-    InvalidNumOfKeySegmentsError,
     KeySegment,
     KeySegments,
-    PianoKey,
+    PianoKeyColor,
     Range,
 )
 from piano_midi.video_capture import VideoCapture
@@ -112,20 +111,19 @@ class KeyPicker:
         typer.echo("Trackbars reset")
 
     def _store_segments(
-        self, key_segments: list[KeySegment], piano_key: PianoKey
+        self, key_segments: list[KeySegment], piano_key: PianoKeyColor
     ) -> None:
         """Stores the segments in a yaml file"""
-        try:
-            _key_segments = KeySegments.from_yaml(self.key_segments_path)
-        except Exception:
-            typer.echo("Could not load key segments, creating new one")
-            _key_segments = KeySegments()
-        try:
-            setattr(_key_segments, piano_key.name.lower(), key_segments)
-            _key_segments.to_yaml(self.key_segments_path)
-            typer.echo(f"Segments stored for color {piano_key}")
-        except InvalidNumOfKeySegmentsError as e:
-            typer.echo(e, err=True)
+        _key_segments = KeySegments.from_yaml(self.key_segments_path)
+        if piano_key == PianoKeyColor.WHITE:
+            if len(key_segments) != 52:
+                raise ValueError
+            _key_segments.white = key_segments
+        elif piano_key == PianoKeyColor.BLACK:
+            if len(key_segments) != 36:
+                raise ValueError
+            _key_segments.black = key_segments
+        _key_segments.to_yaml(self.key_segments_path)
 
     def _get_key_segments(self, masked_scanline: ndarray) -> list[KeySegment]:
         # first map every non zero value to white
@@ -243,9 +241,9 @@ class KeyPicker:
             if key == ESC_KEY:
                 running = False
             if key == ord("w"):
-                self._store_segments(key_segments, PianoKey.WHITE)
+                self._store_segments(key_segments, PianoKeyColor.WHITE)
             if key == ord("b"):
-                self._store_segments(key_segments, PianoKey.BLACK)
+                self._store_segments(key_segments, PianoKeyColor.BLACK)
             if key == ord("z"):
                 self._reset()
 
