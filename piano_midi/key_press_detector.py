@@ -29,7 +29,8 @@ class KeyPressDetector:
     ) -> bool:
         threshold = self.video_capture.width // 256  # avoid glitches
         return (
-            np.count_nonzero(mask[:, key_segment.start : key_segment.end]) > threshold
+            np.count_nonzero(mask[:, key_segment.start_px : key_segment.end_px])
+            > threshold
         )
 
     def run(

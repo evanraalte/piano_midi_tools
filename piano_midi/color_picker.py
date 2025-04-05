@@ -6,7 +6,15 @@ import numpy as np
 import typer
 import yaml
 
-from piano_midi.models import ESC_KEY, HSVRange, KeyColor, KeyColors, Range
+from piano_midi.models import (
+    ESC_KEY,
+    Hand,
+    HSVRange,
+    KeyColorIndex,
+    KeyColors,
+    PianoKeyColor,
+    Range,
+)
 
 
 class ColorPicker:
@@ -86,21 +94,18 @@ class ColorPicker:
         self.last_process_time: float = 0  # Track the last processing time
         self.throttle_delay: float = 0.05  # Throttle delay in seconds (50ms)
 
-    def save_color(self, key_color: KeyColor, hsv_range: HSVRange) -> None:
+    def save_color(self, key_color: KeyColorIndex, hsv_range: HSVRange) -> None:
         key_colors = KeyColors.from_yaml(self.colors_path)
-        color_num = key_color.name.lower()
-        setattr(key_colors, color_num, hsv_range)
-        typer.echo(f"{key_color} with {hsv_range} stored in {self.colors_path}")
+        key_colors.colors[key_color] = hsv_range
         key_colors.to_yaml(self.colors_path)
+        typer.echo(f"{key_color} with {hsv_range} stored in {self.colors_path}")
 
-    def load_color(self, key_color: KeyColor) -> None:
+    def load_color(self, key_color: KeyColorIndex) -> None:
         key_colors = KeyColors.from_yaml(self.colors_path)
-        if key_color.name.lower() in key_colors.model_dump():
-            hsv_range = getattr(key_colors, key_color.name.lower())
-            self._set_trackbar_pos(hsv_range)
-            typer.echo(f"{key_color} loaded from {self.colors_path}")
-        else:
-            typer.echo(f"{key_color} not found in {self.colors_path}")
+        if key_color not in key_colors.colors:
+            return
+        hsv_range = key_colors.colors[key_color]
+        self._set_trackbar_pos(hsv_range)
 
     def reset(self) -> None:
         # reset trackbars
@@ -137,23 +142,20 @@ class ColorPicker:
             )  # Increased from 10ms to 30ms for better processing time
             if key == ESC_KEY:
                 running = False
-            elif key in (ord("1"), ord("2"), ord("3"), ord("4")):
-                values = {
-                    "1": KeyColor.LEFT_WHITE,
-                    "2": KeyColor.LEFT_BLACK,
-                    "3": KeyColor.RIGHT_WHITE,
-                    "4": KeyColor.RIGHT_BLACK,
-                }
-                self.save_color(key_color=values[chr(key)], hsv_range=hsv_range)
-            elif key in (ord("q"), ord("w"), ord("e"), ord("r")):
-                values = {
-                    "q": KeyColor.LEFT_WHITE,
-                    "w": KeyColor.LEFT_BLACK,
-                    "e": KeyColor.RIGHT_WHITE,
-                    "r": KeyColor.RIGHT_BLACK,
-                }
-                self.load_color(key_color=values[chr(key)])
-            elif key == ord("z"):
+            key_char = chr(key)
+            mapping = [
+                (PianoKeyColor.WHITE, Hand.LEFT),
+                (PianoKeyColor.BLACK, Hand.LEFT),
+                (PianoKeyColor.WHITE, Hand.RIGHT),
+                (PianoKeyColor.BLACK, Hand.RIGHT),
+            ]
+            if key_char in "1234":  # save
+                idx = key - ord("1")
+                self.save_color(key_color=mapping[idx], hsv_range=hsv_range)
+            elif key_char in "qwer":  # load
+                idx = key - ord("q")
+                self.load_color(key_color=mapping[idx])
+            elif key_char == "z":
                 self.reset()
                 last_hsv_range = None  # Force recalculation after reset
 

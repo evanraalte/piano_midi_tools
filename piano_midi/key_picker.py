@@ -147,7 +147,7 @@ class KeyPicker:
             segment for segment in segments if segment[1] - segment[0] > noise_floor
         ]
         key_segments = [
-            KeySegment(start=segment[0], end=segment[1]) for segment in segments
+            KeySegment(start_px=segment[0], end_px=segment[1]) for segment in segments
         ]
         return key_segments
 
@@ -216,14 +216,14 @@ class KeyPicker:
                 for segment in key_segments:
                     cv2.circle(
                         masked_image_with_overlay,
-                        (segment.start, height_px),
+                        (segment.start_px, height_px),
                         5,
                         (0, 0, 255),
                         -1,
                     )
                     cv2.circle(
                         masked_image_with_overlay,
-                        (segment.end, height_px),
+                        (segment.end_px, height_px),
                         5,
                         (255, 0, 0),
                         -1,

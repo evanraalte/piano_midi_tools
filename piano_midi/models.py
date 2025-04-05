@@ -121,8 +121,8 @@ class InvalidNumOfKeySegmentsError(Exception):
 
 
 class KeySegment(BaseModel):
-    start: int  # in pixels
-    end: int  # in pixels
+    start_px: int
+    end_px: int
 
 
 class KeySegments(BaseModelYaml, validate_assignment=True):
@@ -130,15 +130,8 @@ class KeySegments(BaseModelYaml, validate_assignment=True):
     black: list[KeySegment] | None = None
 
 
-class KeyColor(Enum):
-    LEFT_WHITE = 0
-    RIGHT_WHITE = 1
-    LEFT_BLACK = 2
-    RIGHT_BLACK = 3
+KeyColorIndex = tuple[PianoKeyColor, Hand]
 
 
 class KeyColors(BaseModelYaml):
-    left_white: HSVRange | None = None
-    right_white: HSVRange | None = None
-    left_black: HSVRange | None = None
-    right_black: HSVRange | None = None
+    colors: dict[tuple[PianoKeyColor, Hand], HSVRange] = Field(default_factory=dict)
