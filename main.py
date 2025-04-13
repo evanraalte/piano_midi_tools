@@ -66,7 +66,8 @@ def color_picker(
     time_slice = time_slicer.generate(
         frame_start=frame_start, frame_end=frame_end, scan_line_px=100
     )
-    color_picker = ColorPicker(time_slice=time_slice, colors_path=colors_path)
+    color_picker = ColorPicker(colors_path=colors_path)
+    color_picker.set_timeslice(time_slice)
     color_picker.run()
 
 
