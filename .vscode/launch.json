@@ -13,12 +13,11 @@
             "args": [
                 "color-picker",
                 "--video-path",
-                "test.mp4",
+                "wind.mkv",
                 "--colors-path",
-                "colors.yaml",
+                "colors-wind.yaml",
                 "--frame-end",
                 "250"
-
             ]
         },
         {
@@ -30,10 +29,9 @@
             "args": [
                 "key-picker",
                 "--video-path",
-                "test.mp4",
+                "wind.mkv",
                 "--key-segments-path",
-                "keys.yaml",
-
+                "keys-wind.yaml",
             ]
         },
         {
@@ -45,18 +43,14 @@
             "args": [
                 "video-to-midi",
                 "--video-path",
-                "test2.mp4",
+                "wind.mkv",
                 "--key-segments-path",
-                "keys.yaml",
+                "keys-wind.yaml",
                 "--colors-path",
-                "colors.yaml",
+                "colors-wind.yaml",
                 "--midi-path",
-                "output2.midi",
-                // "--frame-start",
-                // "150",
-                // "--frame-end",
-                // "300",
+                "wind.midi",
             ]
-        },
+        }
     ]
 }

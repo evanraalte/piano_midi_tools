@@ -6,6 +6,7 @@ import numpy as np
 import typer
 from numpy import ndarray
 
+from piano_midi.key_sequence_writer import KeySequenceWriter
 from piano_midi.models import (
     ESC_KEY,
     HSVRange,
@@ -53,6 +54,49 @@ class KeyPicker:
     def _set_frame_number(self, frame_number: int) -> None:
         cv2.setTrackbarPos("frame_number", self.WIN_NAME_HSV_MASK_CREATOR, frame_number)
 
+    def _get_start_key(self) -> int:
+        return cv2.getTrackbarPos("start_key", self.WIN_NAME_HSV_MASK_CREATOR)
+
+    def _get_end_key(self) -> int:
+        return cv2.getTrackbarPos("end_key", self.WIN_NAME_HSV_MASK_CREATOR)
+
+    def _set_start_key(self, start_key: int) -> None:
+        cv2.setTrackbarPos("start_key", self.WIN_NAME_HSV_MASK_CREATOR, start_key)
+
+    def _set_end_key(self, end_key: int) -> None:
+        cv2.setTrackbarPos("end_key", self.WIN_NAME_HSV_MASK_CREATOR, end_key)
+
+    def _calculate_expected_keys(self, start_key: int, end_key: int) -> tuple[int, int]:
+        """
+        Calculate expected number of white and black keys in the range from start_key to end_key.
+
+        Args:
+            start_key: Starting key index (0-87)
+            end_key: Ending key index (0-87)
+
+        Returns:
+            Tuple of (expected_white_keys, expected_black_keys)
+        """
+        expected_white_keys = 0
+        expected_black_keys = 0
+
+        for key_idx in range(start_key, end_key + 1):
+            # Use the exact same logic as in the KeyIndex class
+            if key_idx % 12 in {
+                0,  # A
+                2,  # B
+                3,  # C
+                5,  # D
+                7,  # E
+                8,  # F
+                10,  # G
+            }:
+                expected_white_keys += 1
+            else:
+                expected_black_keys += 1
+
+        return expected_white_keys, expected_black_keys
+
     def click_event(self, event, x, y, flags, param) -> None:  # noqa: ANN001, ARG002
         if event == cv2.EVENT_LBUTTONDOWN:
             # sets the scanline to the clicked y position
@@ -80,6 +124,14 @@ class KeyPicker:
 
         cv2.createTrackbar(
             "h_scanline_pct", self.WIN_NAME_HSV_MASK_CREATOR, 0, 100, lambda _: None
+        )
+
+        # Add sliders for start and end key (88 keys total)
+        cv2.createTrackbar(
+            "start_key", self.WIN_NAME_HSV_MASK_CREATOR, 0, 87, lambda _: None
+        )
+        cv2.createTrackbar(
+            "end_key", self.WIN_NAME_HSV_MASK_CREATOR, 87, 87, lambda _: None
         )
 
         cv2.createTrackbar(
@@ -115,15 +167,49 @@ class KeyPicker:
     ) -> None:
         """Stores the segments in a yaml file"""
         _key_segments = KeySegments.from_yaml(self.key_segments_path)
+
+        # Calculate expected keys based on start/end key range
+        start_key = self._get_start_key()
+        end_key = self._get_end_key()
+
+        # Count expected white and black keys in the range
+        expected_white_keys, expected_black_keys = self._calculate_expected_keys(
+            start_key, end_key
+        )
+
         if piano_key == PianoKeyColor.WHITE:
-            if len(key_segments) != 52:
-                raise ValueError
+            if len(key_segments) != expected_white_keys:
+                typer.echo(
+                    f"Warning: Expected {expected_white_keys} white keys in the range from key {start_key} to {end_key}"
+                )
+                typer.echo(f"         Found {len(key_segments)} segments instead")
+                if not typer.confirm(
+                    "Continue with storing these segments?", default=False
+                ):
+                    return
             _key_segments.white = key_segments
+
         elif piano_key == PianoKeyColor.BLACK:
-            if len(key_segments) != 36:
-                raise ValueError
+            if len(key_segments) != expected_black_keys:
+                typer.echo(
+                    f"Warning: Expected {expected_black_keys} black keys in the range from key {start_key} to {end_key}"
+                )
+                typer.echo(f"         Found {len(key_segments)} segments instead")
+                if not typer.confirm(
+                    "Continue with storing these segments?", default=False
+                ):
+                    return
             _key_segments.black = key_segments
+
+        # Save the segments
         _key_segments.to_yaml(self.key_segments_path)
+
+        # Show confirmation with start and end note information
+        start_note = KeySequenceWriter.to_note(start_key)
+        end_note = KeySequenceWriter.to_note(end_key)
+        typer.echo(
+            f"Stored {len(key_segments)} {piano_key.value} key segments for range {start_note} to {end_note}"
+        )
 
     def _get_key_segments(self, masked_scanline: ndarray) -> list[KeySegment]:
         # first map every non zero value to white
@@ -161,11 +247,15 @@ class KeyPicker:
         last_hsv_range = None
         last_height_pct = None
         last_frame_number = -1
+        last_start_key = -1
+        last_end_key = -1
 
         while running:
             current_frame_number = self._get_frame_number()
             hsv_range = self._get_hsv_trackbar_pos()
             height_pct = self._get_scanline_pct()
+            start_key = self._get_start_key()
+            end_key = self._get_end_key()
 
             current_time = time.time()
             time_since_last_process = current_time - self.last_process_time
@@ -174,6 +264,8 @@ class KeyPicker:
                 hsv_range != last_hsv_range
                 or height_pct != last_height_pct
                 or current_frame_number != last_frame_number
+                or start_key != last_start_key
+                or end_key != last_end_key
             ) and time_since_last_process >= self.throttle_delay
 
             if should_process:
@@ -200,6 +292,11 @@ class KeyPicker:
                 line = masked_image[height_px, :, :]
                 key_segments = self._get_key_segments(masked_scanline=line)
 
+                # Calculate expected keys based on start/end key range
+                expected_white_keys, expected_black_keys = (
+                    self._calculate_expected_keys(start_key, end_key)
+                )
+
                 # draw number of segments somewhere on the image
                 cv2.putText(
                     masked_image_with_overlay,
@@ -208,6 +305,48 @@ class KeyPicker:
                     cv2.FONT_HERSHEY_SIMPLEX,
                     1,
                     (0, 255, 0),
+                    2,
+                )
+
+                # Display start and end key information
+                start_note = KeySequenceWriter.to_note(start_key)
+                end_note = KeySequenceWriter.to_note(end_key)
+                cv2.putText(
+                    masked_image_with_overlay,
+                    f"Start key: {start_key} ({start_note})",
+                    (10, 70),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.8,
+                    (0, 255, 255),
+                    2,
+                )
+                cv2.putText(
+                    masked_image_with_overlay,
+                    f"End key: {end_key} ({end_note})",
+                    (10, 110),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.8,
+                    (0, 255, 255),
+                    2,
+                )
+
+                # Display expected key counts
+                cv2.putText(
+                    masked_image_with_overlay,
+                    f"Expected white keys: {expected_white_keys} (press `w` to save)",
+                    (10, 150),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.8,
+                    (0, 255, 255),
+                    2,
+                )
+                cv2.putText(
+                    masked_image_with_overlay,
+                    f"Expected black keys: {expected_black_keys} (press `b` to save)",
+                    (10, 190),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.8,
+                    (0, 255, 255),
                     2,
                 )
 
@@ -233,6 +372,8 @@ class KeyPicker:
                 last_hsv_range = hsv_range
                 last_height_pct = height_pct
                 last_frame_number = current_frame_number
+                last_start_key = start_key
+                last_end_key = end_key
                 self.last_process_time = current_time
 
             key = (

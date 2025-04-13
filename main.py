@@ -100,6 +100,14 @@ def video_to_midi(
         int | None,
         typer.Option("--frame-end", help="Frame end for the timeslice"),
     ] = None,
+    start_key: Annotated[
+        int,
+        typer.Option("--start-key", help="First key to process (0-87, where 0 is A0)"),
+    ] = 0,
+    end_key: Annotated[
+        int,
+        typer.Option("--end-key", help="Last key to process (0-87, where 87 is C8)"),
+    ] = 87,
 ) -> None:
     typer.echo(f"Starting video to midi with image path: {video_path}")
     video_capture = VideoCapture(video_path)
@@ -114,6 +122,8 @@ def video_to_midi(
         key_sequence_writer=key_sequence_writer,
         frame_start=frame_start,
         frame_end=frame_end,
+        start_key=start_key,
+        end_key=end_key,
     )
     key_sequence_writer.save(midi_file_path=midi_path)
 

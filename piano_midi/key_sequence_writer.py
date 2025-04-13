@@ -15,6 +15,16 @@ class KeySequenceWriter:
         self.midi_file.tracks.append(self.track)
         self.current_frame = 0
         self.fps = fps
+        self.start_key = 0
+        self.end_key = 87  # Default to full 88-key range
+
+    def set_key_range(self, start_key: int, end_key: int) -> None:
+        """Set the key range to process. Keys outside this range will be ignored."""
+        self.start_key = start_key
+        self.end_key = end_key
+        print(
+            f"MIDI key range set: {self.to_note(start_key)} to {self.to_note(end_key)}"
+        )
 
     def process_change(self, piano_changes: PianoChanges, frame_num: int) -> None:
         # Update time reference
@@ -22,8 +32,12 @@ class KeySequenceWriter:
         self.current_frame = frame_num
         time_diff = int(1000 / self.fps * frame_diff)
 
-        # Implementation for processing changes
+        # Implementation for processing changes, filtering by key range
         for press in piano_changes.pressed:
+            # Skip keys outside our range
+            if press.index < self.start_key or press.index > self.end_key:
+                continue
+
             self.track.append(
                 mido.Message(
                     "note_on",
@@ -37,6 +51,10 @@ class KeySequenceWriter:
                 f"Key {press.index} ({self.to_note(press.index)}) pressed by {press.hand}"
             )
         for press in piano_changes.released:
+            # Skip keys outside our range
+            if press.index < self.start_key or press.index > self.end_key:
+                continue
+
             self.track.append(
                 mido.Message(
                     "note_off",

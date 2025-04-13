@@ -40,8 +40,13 @@ class KeyPressDetector:
         scan_line_px: int = 100,
         frame_start: int,
         frame_end: int | None,
+        start_key: int = 0,
+        end_key: int = 87,
     ) -> None:
         with self.video_capture as cap:
+            # Set key range in the key sequence writer
+            key_sequence_writer.set_key_range(start_key, end_key)
+
             for frame, frame_num in cap.read_range(frame_start, frame_end):
                 # read line  of frame
                 line = frame[scan_line_px : scan_line_px + 1, :, :]
