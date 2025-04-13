@@ -242,9 +242,12 @@ class KeyPicker:
                 running = False
             if key == ord("w"):
                 self._store_segments(key_segments, PianoKeyColor.WHITE)
+                typer.echo("Stored key segments for white!")
             if key == ord("b"):
                 self._store_segments(key_segments, PianoKeyColor.BLACK)
+                typer.echo("Stored key segments for black!")
             if key == ord("z"):
+                typer.echo("Reset!")
                 self._reset()
 
         cv2.destroyAllWindows()

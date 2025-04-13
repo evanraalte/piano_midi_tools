@@ -87,25 +87,26 @@ class ColorPicker:
         cv2.namedWindow(self.WIN_NAME_HSV_MASK_CREATOR)
         cv2.setMouseCallback(self.WIN_NAME_ORIGINAL_IMAGE, self.click_event)
 
-    def __init__(self, time_slice: np.ndarray, colors_path: Path) -> None:
-        self.image = time_slice
+    def __init__(self, colors_path: Path) -> None:
         self.colors_path = colors_path
-        self.hsv = cv2.cvtColor(self.image, cv2.COLOR_BGR2HSV)
         self.last_process_time: float = 0  # Track the last processing time
         self.throttle_delay: float = 0.05  # Throttle delay in seconds (50ms)
 
+    def set_timeslice(self, timeslice: np.ndarray) -> None:
+        self.timeslice = timeslice
+        self.hsv = cv2.cvtColor(self.timeslice, cv2.COLOR_BGR2HSV)
+
     def save_color(self, key_color: KeyColorIndex, hsv_range: HSVRange) -> None:
         key_colors = KeyColors.from_yaml(self.colors_path)
-        key_colors.colors[key_color] = hsv_range
+        key_colors.set_color(key_color, hsv_range)
         key_colors.to_yaml(self.colors_path)
         typer.echo(f"{key_color} with {hsv_range} stored in {self.colors_path}")
 
     def load_color(self, key_color: KeyColorIndex) -> None:
         key_colors = KeyColors.from_yaml(self.colors_path)
-        if key_color not in key_colors.colors:
-            return
-        hsv_range = key_colors.colors[key_color]
+        hsv_range = key_colors.get_color(key_color)
         self._set_trackbar_pos(hsv_range)
+        return hsv_range
 
     def reset(self) -> None:
         # reset trackbars
@@ -130,12 +131,12 @@ class ColorPicker:
                 last_hsv_range is None or hsv_range != last_hsv_range
             ) and time_since_last_process >= self.throttle_delay:
                 mask = cv2.inRange(self.hsv, hsv_range.lower(), hsv_range.upper())
-                result = cv2.bitwise_and(self.image, self.image, mask=mask)
+                result = cv2.bitwise_and(self.timeslice, self.timeslice, mask=mask)
                 last_hsv_range = hsv_range
                 self.last_process_time = current_time
 
             cv2.imshow(self.WIN_NAME_HSV_MASK_CREATOR, result)
-            cv2.imshow(self.WIN_NAME_ORIGINAL_IMAGE, self.image)
+            cv2.imshow(self.WIN_NAME_ORIGINAL_IMAGE, self.timeslice)
 
             key = (
                 cv2.waitKey(30) & 0xFF
@@ -152,9 +153,14 @@ class ColorPicker:
             if key_char in "1234":  # save
                 idx = key - ord("1")
                 self.save_color(key_color=mapping[idx], hsv_range=hsv_range)
-            elif key_char in "qwer":  # load
-                idx = key - ord("q")
-                self.load_color(key_color=mapping[idx])
+            elif key_char == "q":
+                self.load_color(key_color=mapping[0])
+            elif key_char == "w":
+                self.load_color(key_color=mapping[1])
+            elif key_char == "e":
+                self.load_color(key_color=mapping[2])
+            elif key_char == "r":
+                self.load_color(key_color=mapping[3])
             elif key_char == "z":
                 self.reset()
                 last_hsv_range = None  # Force recalculation after reset

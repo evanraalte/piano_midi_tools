@@ -1,8 +1,9 @@
-from enum import Enum, auto
+from enum import StrEnum
 from pathlib import Path
 from typing import Annotated, Self
 
 import numpy as np
+import typer
 import yaml
 from pydantic import BaseModel, Field, ValidationError
 
@@ -47,23 +48,28 @@ class BaseModelYaml(BaseModel):
             data = yaml.safe_load(file)
         try:
             return cls.model_validate(data)
-        except ValidationError:
-            return cls()
+        except ValidationError as exc:
+            typer.echo(
+                f"Could not parse data in yaml file, returning empty instance. {exc=}"
+            )
+            new_instance = cls()
+            new_instance.to_yaml(yaml_path)
+            return new_instance
 
     def to_yaml(self, yaml_path: Path) -> None:
         with yaml_path.open("w") as file:
             file.write(yaml.dump(self.model_dump(mode="json")))
 
 
-class PianoKeyColor(Enum):
+class PianoKeyColor(StrEnum):
     # store number of expected keys
-    WHITE = auto()
-    BLACK = auto()
+    WHITE = "white"
+    BLACK = "black"
 
 
-class Hand(Enum):
-    LEFT = auto()
-    RIGHT = auto()
+class Hand(StrEnum):
+    LEFT = "left"
+    RIGHT = "right"
 
 
 class KeyIndex(BaseModel):
@@ -134,4 +140,32 @@ KeyColorIndex = tuple[PianoKeyColor, Hand]
 
 
 class KeyColors(BaseModelYaml):
-    colors: dict[tuple[PianoKeyColor, Hand], HSVRange] = Field(default_factory=dict)
+    def set_color(self, index: KeyColorIndex, hsv_range: HSVRange) -> None:
+        """Update color for the specified key type and hand"""
+        match index:
+            case (PianoKeyColor.WHITE, Hand.LEFT):
+                self.white_left = hsv_range
+            case (PianoKeyColor.BLACK, Hand.LEFT):
+                self.black_left = hsv_range
+            case (PianoKeyColor.WHITE, Hand.RIGHT):
+                self.white_right = hsv_range
+            case (PianoKeyColor.BLACK, Hand.RIGHT):
+                self.black_right = hsv_range
+        # Also update the colors dictionary
+
+    def get_color(self, index: KeyColorIndex) -> HSVRange | None:
+        """Get color for the specified key type and hand"""
+        match index:
+            case (PianoKeyColor.WHITE, Hand.LEFT):
+                return self.white_left
+            case (PianoKeyColor.BLACK, Hand.LEFT):
+                return self.black_left
+            case (PianoKeyColor.WHITE, Hand.RIGHT):
+                return self.white_right
+            case (PianoKeyColor.BLACK, Hand.RIGHT):
+                return self.black_right
+
+    black_left: HSVRange | None = None
+    white_left: HSVRange | None = None
+    black_right: HSVRange | None = None
+    white_right: HSVRange | None = None

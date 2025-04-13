@@ -47,25 +47,25 @@ class KeyPressDetector:
                 line = frame[scan_line_px : scan_line_px + 1, :, :]
                 line_hsv = cv2.cvtColor(line, cv2.COLOR_BGR2HSV)
 
-                left_white = cv2.inRange(
+                white_left = cv2.inRange(
                     line_hsv,
-                    cast("HSVRange", self.key_colors.left_white).lower(),
-                    cast("HSVRange", self.key_colors.left_white).upper(),
+                    cast("HSVRange", self.key_colors.white_left).lower(),
+                    cast("HSVRange", self.key_colors.white_left).upper(),
                 )
-                left_black = cv2.inRange(
+                black_left = cv2.inRange(
                     line_hsv,
-                    cast("HSVRange", self.key_colors.left_black).lower(),
-                    cast("HSVRange", self.key_colors.left_black).upper(),
+                    cast("HSVRange", self.key_colors.black_left).lower(),
+                    cast("HSVRange", self.key_colors.black_left).upper(),
                 )
-                right_white = cv2.inRange(
+                white_right = cv2.inRange(
                     line_hsv,
-                    cast("HSVRange", self.key_colors.right_white).lower(),
-                    cast("HSVRange", self.key_colors.right_white).upper(),
+                    cast("HSVRange", self.key_colors.white_right).lower(),
+                    cast("HSVRange", self.key_colors.white_right).upper(),
                 )
-                right_black = cv2.inRange(
+                black_right = cv2.inRange(
                     line_hsv,
-                    cast("HSVRange", self.key_colors.right_black).lower(),
-                    cast("HSVRange", self.key_colors.right_black).upper(),
+                    cast("HSVRange", self.key_colors.black_right).lower(),
+                    cast("HSVRange", self.key_colors.black_right).upper(),
                 )
 
                 # # draw scan line in frame
@@ -79,12 +79,12 @@ class KeyPressDetector:
                 ):
                     next_piano_state.set_white_key(
                         key_idx,
-                        is_pressed=self._is_key_pressed(left_white, segment),
+                        is_pressed=self._is_key_pressed(white_left, segment),
                         hand=Hand.LEFT,
                     )
                     next_piano_state.set_white_key(
                         key_idx,
-                        is_pressed=self._is_key_pressed(right_white, segment),
+                        is_pressed=self._is_key_pressed(white_right, segment),
                         hand=Hand.RIGHT,
                     )
                 for key_idx, segment in enumerate(
@@ -92,12 +92,12 @@ class KeyPressDetector:
                 ):
                     next_piano_state.set_black_key(
                         key_idx,
-                        is_pressed=self._is_key_pressed(left_black, segment),
+                        is_pressed=self._is_key_pressed(black_left, segment),
                         hand=Hand.LEFT,
                     )
                     next_piano_state.set_black_key(
                         key_idx,
-                        is_pressed=self._is_key_pressed(right_black, segment),
+                        is_pressed=self._is_key_pressed(black_right, segment),
                         hand=Hand.RIGHT,
                     )
 
